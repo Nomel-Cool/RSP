@@ -14,7 +14,7 @@
 一个栈 用于存储每一个状态在通用语义树的二进制编码
 成员函数：
 interaction(i,j) 公有 供网络调度层使用，使得ai与aj进行交互
-getStatus() 公有 供反馈层调用获取二进制编码栈
+getCode() 公有 供反馈层调用获取二进制编码栈
 */
 template<size_t N>
 class virtuality

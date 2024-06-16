@@ -23,5 +23,13 @@
     <ClInclude Include="virtuality.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="reality.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="interaction_output.csv">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
