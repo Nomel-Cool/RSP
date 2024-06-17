@@ -18,9 +18,11 @@ int main()
 		cout << code.top() << endl;
 		code.pop();
 	}
-
+	
 	reality<5> r(5,12);
-	//r.interaction(1, 2);
+	int n = 10;
+	while (n--)
+		r.interaction(1, 2);
 	r.show();
 	return 0;
 }

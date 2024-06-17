@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <map>
+#include <string>
 
 #include <fstream> // for file operations
 #include <iterator> // for std::ostream_iterator
@@ -34,26 +35,17 @@ public:
         if (max_value == 0 || max_size <= 0)
             return;
 
-        // Obtain a time-based seed:
         unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
 
         for (size_t i = 0; i < N; ++i)
         {
-            auto rand_size = rand() % max_size; // 填充N个非负整数
-            std::vector<uint32_t> temp_v(max_value); // 创建一个大小为max_value的向量
-
-            // Fill the vector with numbers from 0 to max_value - 1
-            for (uint32_t j = 0; j < max_value; ++j)
-            {
-                temp_v[j] = j;
-            }
+            auto rand_size = rand() % max_size + 1; // Not Empty Set
+            std::vector<std::string> temp_v(rand_size);
+            for (uint32_t j = 0; j < rand_size; ++j)
+                temp_v[j] = std::to_string(j);
 
             // Shuffle the vector using the default random engine
             std::shuffle(temp_v.begin(), temp_v.end(), std::default_random_engine(seed));
-
-            // Resize the vector to rand_size
-            temp_v.resize(rand_size);
-
             m_interactive_instances[i] = std::make_pair(temp_v, temp_v);
         }
     }
@@ -68,13 +60,45 @@ public:
         auto& vi = m_interactive_instances[i];
         auto& vj = m_interactive_instances[j];
 
-        uint32_t result4j = vi.first[pick_one] + vj.second[pick_one];
-        if (std::find(vj.second.begin(), vj.second.end(), result4j) == vj.second.end())
-            vj.first.emplace(result4j);
+        std::string qi = vi.first[rand() % vi.first.size()];
+        std::string ai = vi.second[rand() % vi.second.size()];
+        std::string qj = vj.first[rand() % vj.first.size()];
+        std::string aj = vj.second[rand() % vj.second.size()];
+
+        uint32_t result4j = std::atoi(qi.c_str()) + std::atoi(aj.c_str());
+        auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4j));
+        auto it_qj = std::find(vj.first.begin(), vj.first.end(), std::to_string(result4j));
+        if (it_aj == vj.second.end())
+            if (it_qj != vj.first.end())
+            {
+                auto offset = std::distance(vj.first.begin(), it_qj);
+                if (offset <= vj.second.size())
+                    vj.second.insert(vj.second.begin() + offset, std::to_string(result4j));
+                else
+                {
+                    // Handle the case where offset is greater than the size of vi.second
+                }
+            }
+            else
+                vj.first.emplace_back(std::to_string(result4j));
         
-        uint32_t result4i = vj.first[pick_one] + vi.second[pick_one];
-        if (std::find(vi.second.begin(), vi.second.end(), result4i) == vi.second.end())
-            vi.first.emplace(result4i);
+        uint32_t result4i = std::atoi(qj.c_str()) + std::atoi(ai.c_str());
+        auto it_ai = std::find(vi.second.begin(), vi.second.end(), std::to_string(result4i));
+        auto it_qi = std::find(vi.first.begin(), vi.first.end(), std::to_string(result4i));
+        if (it_ai == vi.second.end())
+            if (it_qi != vi.first.end())
+            {
+                auto offset = std::distance(vi.first.begin(), it_qi);
+                if (offset <= vi.second.size())
+                    vi.second.insert(vi.second.begin() + offset, std::to_string(result4i));
+                else
+                {
+                    // Handle the case where offset is greater than the size of vi.second
+                }
+            }
+            else
+                vi.first.emplace_back(std::to_string(result4i));
+
 	}
 
     virtual void show()
@@ -118,7 +142,7 @@ public:
     }
 
 private:
-	std::map<size_t, std::pair<std::vector<uint32_t>, std::vector<uint32_t> > > m_interactive_instances;
+	std::map<size_t, std::pair<std::vector<std::string>, std::vector<std::string> > > m_interactive_instances;
 };
 
 #endif // !REALITY_H
