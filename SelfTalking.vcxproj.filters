@@ -26,9 +26,18 @@
     <ClInclude Include="reality.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="decision.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="dispatcher.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="interaction_output.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_orders.csv">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>
