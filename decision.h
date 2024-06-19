@@ -2,10 +2,10 @@
 #ifndef DECISION_H
 #define DECISION_H
 
+#include <tuple>
 #include <map>
 #include <fstream>
 #include <random>
-
 
 /*概要设计
 成员变量：
@@ -43,7 +43,7 @@ public:
 		std::uniform_int_distribution<> dis(1, 5); // 假设item_i和item_j的范围是0~4
 
 		// 生成随机的交互序列
-		for (int order = 1; order <= 1000; ++order) // 假设我们要生成100个交互
+		for (int order = 1; order <= 40; ++order) // 假设我们要生成100个交互
 		{
 			int item_i = dis(gen);
 			int item_j = dis(gen);

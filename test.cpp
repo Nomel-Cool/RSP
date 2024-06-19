@@ -10,6 +10,7 @@ int main()
 	de.makeOrders();
 	dispatcher<5, 1, 5, 12> d;
 	d.interaction();
+	d.statisticConvergence();
 	d.show(0);
 	return 0;
 }

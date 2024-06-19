@@ -78,6 +78,8 @@ namespace st
             std::string qj = vj.first[rand() % vj.first.size()];
             std::string aj = vj.second[rand() % vj.second.size()];
 
+            bool viq = false, via = false, vjq = false, vja = false; // 滞后信号量，因为交互是同时发生的，所以QBag和ABag的修改都必须是同时的
+
             /* vi -> vj */
             uint32_t result4j = std::atoi(qi.c_str()) + std::atoi(aj.c_str());
             auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4j));
@@ -87,11 +89,13 @@ namespace st
                 auto it_qi = std::find(vi.first.begin(), vi.first.end(), std::to_string(result4j));
                 auto it_ai = std::find(vi.second.begin(), vi.second.end(), std::to_string(result4j));
                 if (it_qi != vi.first.end() && it_ai == vi.second.end()) // 如果解决了vi的QBag的问题并且vi的ABag没有这个答案，则更新vi的ABag
-                    vi.second.emplace_back(std::to_string(result4j));
+                    //vi.second.emplace_back(std::to_string(result4j));
+                    via = true;
             }
             else // 如果没有解决问题，并且如果QBag中没有相同的问题，则新增一则问题
                 if (it_qj == vj.first.end())
-                    vj.first.emplace_back(std::to_string(result4j));
+                    //vj.first.emplace_back(std::to_string(result4j));
+                    vjq = true;
 
             /* vj -> vi  */
             uint32_t result4i = std::atoi(qj.c_str()) + std::atoi(ai.c_str());
@@ -102,11 +106,29 @@ namespace st
                 auto it_qj = std::find(vj.first.begin(), vj.first.end(), std::to_string(result4i));
                 auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4i));
                 if (it_qj != vj.first.end() && it_aj == vj.second.end()) // 如果解决了vj的QBag的问题并且vj的ABag没有对应的答案，则更新vj的ABag
-                    vj.second.emplace_back(std::to_string(result4i));
+                    //vj.second.emplace_back(std::to_string(result4i));
+                    vja = true;
             }
             else // 如果没有解决问题，并且如果vi的QBag中没有相同的问题，则新增一则问题
                 if (it_qi == vi.first.end())
-                    vi.first.emplace_back(std::to_string(result4i));
+                    //vi.first.emplace_back(std::to_string(result4i));
+                    viq = true;
+            
+            //滞后更新
+            if(viq)
+                vj.first.emplace_back(std::to_string(result4j));
+            if(via)
+                vi.second.emplace_back(std::to_string(result4j));
+            if(vjq)
+                vi.first.emplace_back(std::to_string(result4i));
+            if(vja)
+                vj.second.emplace_back(std::to_string(result4i));
+        }
+
+        virtual std::pair<std::vector<std::string>, std::vector<std::string> >getVectors(size_t index)
+        {
+            if(m_interactive_instances.find(index) != m_interactive_instances.end())
+                return m_interactive_instances[index];
         }
 
         virtual void show()

@@ -136,6 +136,7 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="interaction_accuracy.csv" />
     <None Include="interaction_orders.csv" />
     <None Include="interaction_output.csv" />
   </ItemGroup>
