@@ -68,15 +68,15 @@ namespace st
         /// </summary>
         /// <param name="i"></param>
         /// <param name="j"></param>
-        virtual void interaction(size_t i, size_t j)
+        virtual void interaction(size_t i, size_t j, size_t index_i, size_t index_j)
         {
-            auto& vi = m_interactive_instances[i - 1];
-            auto& vj = m_interactive_instances[j - 1];
+            auto& vi = m_interactive_instances[i];
+            auto& vj = m_interactive_instances[j];
 
             std::string qi = vi.first[rand() % vi.first.size()];
-            std::string ai = vi.second[rand() % vi.second.size()];
+            std::string ai = vi.second[index_i];
             std::string qj = vj.first[rand() % vj.first.size()];
-            std::string aj = vj.second[rand() % vj.second.size()];
+            std::string aj = vj.second[index_j];
 
             bool viq = false, via = false, vjq = false, vja = false; // 滞后信号量，因为交互是同时发生的，所以QBag和ABag的修改都必须是同时的
 
@@ -94,7 +94,6 @@ namespace st
             }
             else // 如果没有解决问题，并且如果QBag中没有相同的问题，则新增一则问题
                 if (it_qj == vj.first.end())
-                    //vj.first.emplace_back(std::to_string(result4j));
                     vjq = true;
 
             /* vj -> vi  */
@@ -106,7 +105,6 @@ namespace st
                 auto it_qj = std::find(vj.first.begin(), vj.first.end(), std::to_string(result4i));
                 auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4i));
                 if (it_qj != vj.first.end() && it_aj == vj.second.end()) // 如果解决了vj的QBag的问题并且vj的ABag没有对应的答案，则更新vj的ABag
-                    //vj.second.emplace_back(std::to_string(result4i));
                     vja = true;
             }
             else // 如果没有解决问题，并且如果vi的QBag中没有相同的问题，则新增一则问题
@@ -134,18 +132,6 @@ namespace st
         virtual void show()
         {
             std::ofstream file("interaction_output.csv");
-
-            // Write headers
-            file << "Key";
-            for (size_t i = 0; i < N; ++i)
-            {
-                file << ",QBag" << i + 1;
-            }
-            for (size_t i = 0; i < N; ++i)
-            {
-                file << ",ABag" << i + 1;
-            }
-            file << "\n";
 
             // Write data
             for (auto& pair : m_interactive_instances)

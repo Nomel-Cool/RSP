@@ -33,10 +33,10 @@ public:
 		groupId = groupId;
 		binded = binded;
 	}
-	void set(size_t i, size_t j)
+	void set(size_t i, size_t j, size_t index_i, size_t index_j)
 	{
 		//v.interaction(i, j);
-		r.interaction(i, j);
+		r.interaction(i, j, index_i, index_j);
 	}
 	void show()
 	{
@@ -88,26 +88,28 @@ public:
 	{
 		std::ifstream file("interaction_orders.csv");
 		std::string line;
-		// 跳过标题行
-		std::getline(file, line);
 		while (std::getline(file, line))
 		{
 			std::istringstream iss(line);
-			std::string order, node_id, item_i, item_j;
+			std::string order, node_id, item_i, item_j, e_i, e_j;
 			std::getline(iss, order, ',');
 			std::getline(iss, node_id, ',');
 			std::getline(iss, item_i, ',');
 			std::getline(iss, item_j, ',');
+			std::getline(iss, e_i, ',');
+			std::getline(iss, e_j, ',');
 			int nodeId = std::stoi(node_id);
 			size_t i = std::stoul(item_i);
 			size_t j = std::stoul(item_j);
+			size_t index_i = std::stoul(e_i);
+			size_t index_j = std::stoul(e_j);
 			if (nodeId >= 0 && nodeId < env.size())
-				env[nodeId].set(i, j);
+				env[nodeId].set(i, j, index_i, index_j);
 		}
 	}
 	void statisticConvergence()
 	{
-		std::vector<std::tuple<size_t, size_t, std::vector<double>>> accuracy_rates;
+		std::map<std::pair<size_t, size_t>, std::vector<double>> accuracy_rates;
 
 		for (size_t i = 0; i < env.size(); ++i)
 		{
@@ -115,27 +117,38 @@ public:
 
 			for (size_t j = 0; j < N; ++j)
 			{
-				auto vectors4A = r.getVectors(j);
-				auto differenceSets = calculateDifferenceSet(vectors4A.second);
+				// 确定询问元，提取它的QBag作为集合
+				auto vectors4Q = r.getVectors(j);
+				auto vec4Q = vectors4Q.first;
+				std::set<std::string> set4Q(vec4Q.begin(), vec4Q.end());
 
-				for (size_t k = 0; k < N && k != j; ++k)
+				for (size_t k = 0; k < N; ++k)
 				{
-					auto vectors4Q = r.getVectors(k);
-					auto vec4Q = vectors4Q.first;
+					if (k == j)
+						continue;
 
-					// 将vectors.first转换为集合
-					std::set<std::string> set4Q(vec4Q.begin(), vec4Q.end());
+					std::vector<double> rates;
 
-					// 计算交集
-					std::set<std::string> intersection;
-					std::set_intersection(set4Q.begin(), set4Q.end(), differenceSets[k].begin(), differenceSets[k].end(),
-						std::inserter(intersection, intersection.begin()));
+					// 确定应答元，提取它的ABag作差值集
+					auto vectors4A = r.getVectors(k);
+					auto differenceSets = calculateDifferenceSet(vectors4A.second);
 
-					// 计算交集集合的势和vectors.first的势
-					double rate = static_cast<double>(intersection.size()) / static_cast<double>(vec4Q.size());
+					// 计算QBag与ABag差值集的交集
+					for (size_t u = 0; u < differenceSets.size(); ++u)
+					{
+						std::set<std::string> intersection;
+						std::set_intersection(set4Q.begin(), set4Q.end(), differenceSets[u].begin(), differenceSets[u].end(),
+							std::inserter(intersection, intersection.begin()));
 
-					// 添加到结果数组
-					accuracy_rates.emplace_back(std::make_tuple(k, j, std::vector<double>{rate}));
+						// 计算交集集合的势和QBag的势的商
+						double rate = static_cast<double>(intersection.size()) / static_cast<double>(vec4Q.size());
+						
+						// 添加到结果数组
+						rates.emplace_back(rate);
+					}
+
+					// 更新交互命中概率数组
+					accuracy_rates[std::make_pair(j, k)] = rates;
 				}
 			}
 		}
@@ -143,41 +156,49 @@ public:
 		writeAccuracyToFile(accuracy_rates,"interaction_accuracy.csv");
 	}
 protected:
-	using AccuracyData = std::vector<std::tuple<size_t, size_t, std::vector<double>>>;
-	void writeAccuracyToFile(AccuracyData& data, const std::string& filename) {
-		// 对数据进行排序
-		std::sort(data.begin(), data.end(),[](const auto& a, const auto& b)
-			{
-				// 首先比较Index_i
-				if (std::get<0>(a) != std::get<0>(b)) {
-					return std::get<0>(a) < std::get<0>(b);
-				}
-		// 如果Index_i相等，那么比较Index_j
-		return std::get<1>(a) < std::get<1>(b);
-			});
+	using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
+	void writeAccuracyToFile(AccuracyData& data, const std::string& filename)
+	{
+		std::ofstream outFile(filename);
 
-		std::ofstream file(filename);
+		// 创建一个set来记录已经处理过的键值对
+		std::set<std::pair<size_t, size_t>> processed;
 
-		if (!file.is_open())
-			return;
+		for (const auto& entry : data)
+		{
+			const auto& indices = entry.first;
+			const auto& rates = entry.second;
 
-		// 写入文件头部
-		file << "Index_i, Index_j, AccuracyRate" << std::endl;
-
-		// 写入数据
-		for (const auto& tuple : data) {
-			size_t i, j;
-			std::vector<double> rates;
-			std::tie(i, j, rates) = tuple;
-
-			file << i << ", " << j << ", ";
-			for (const auto& rate : rates) {
-				file << rate << " ";
+			// 如果键值对[i,j]已经被处理过，就跳过
+			if (processed.count(indices) > 0) {
+				continue;
 			}
-			file << std::endl;
-		}
 
-		file.close();
+			// 写入键值对[i,j]
+			outFile << indices.first << "," << indices.second;
+			for (const auto& rate : rates) {
+				outFile << "," << rate;
+			}
+			outFile << '\n';
+
+			// 将键值对[i,j]加入到set中
+			processed.insert(indices);
+
+			// 查找并写入键值对[j,i]
+			auto it_ji = data.find({ indices.second, indices.first });
+			if (it_ji != data.end()) {
+				const auto& rates_ji = it_ji->second;
+				outFile << indices.second << "," << indices.first;
+				for (const auto& rate : rates_ji) {
+					outFile << "," << rate;
+				}
+				outFile << '\n';
+
+				// 将键值对[j,i]加入到set中
+				processed.insert({ indices.second, indices.first });
+			}
+		}
+		outFile.close();
 	}
 
 	std::vector<std::set<std::string>> calculateDifferenceSet(std::vector<std::string> vec)
@@ -189,7 +210,7 @@ protected:
 		for (size_t i = 0; i < vec.size(); ++i)
 		{
 			int ai = std::stoi(vec[i]);
-			for (size_t k = i + 1; k < vec.size(); ++k)
+			for (size_t k = i; k < vec.size(); ++k)
 			{
 				int ak = std::stoi(vec[k]);
 				// 因为vec已经排序，所以ak - ai一定是非负的
