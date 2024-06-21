@@ -21,9 +21,9 @@
 namespace st
 {
 
-    bool cmpFunc(const std::string& a, const std::string& b)
+    bool cmpFunc(const size_t& a, const size_t& b)
     {
-        return std::stoi(a) < std::stoi(b);
+        return a < b;
     }
     /* 概要设计：
     成员变量:
@@ -38,7 +38,7 @@ namespace st
     class reality
     {
     public:
-        reality(size_t max_size, uint32_t max_value)
+        reality(size_t max_size, size_t max_value)
         {
             if (max_value == 0 || max_size <= 0)
                 return;
@@ -48,9 +48,9 @@ namespace st
             for (size_t i = 0; i < N; ++i)
             {
                 auto rand_size = (rand() % max_size) + 1; // Not Empty Set
-                std::vector<std::string> temp_v(rand_size);
-                for (uint32_t j = 0; j < rand_size; ++j)
-                    temp_v[j] = std::to_string(j);
+                std::vector<size_t> temp_v(rand_size);
+                for (size_t j = 0; j < rand_size; ++j)
+                    temp_v[j] = j;
 
                 // Shuffle the vector using the default random engine
                 std::shuffle(temp_v.begin(), temp_v.end(), std::default_random_engine(seed));
@@ -73,23 +73,22 @@ namespace st
             auto& vi = m_interactive_instances[i];
             auto& vj = m_interactive_instances[j];
 
-            std::string qi = vi.first[rand() % vi.first.size()];
-            std::string ai = vi.second[index_i];
-            std::string qj = vj.first[rand() % vj.first.size()];
-            std::string aj = vj.second[index_j];
+            size_t qi = vi.first[rand() % vi.first.size()];
+            size_t ai = vi.second[index_i];
+            size_t qj = vj.first[rand() % vj.first.size()];
+            size_t aj = vj.second[index_j];
 
             bool viq = false, via = false, vjq = false, vja = false; // 滞后信号量，因为交互是同时发生的，所以QBag和ABag的修改都必须是同时的
 
             /* vi -> vj */
-            uint32_t result4j = std::atoi(qi.c_str()) + std::atoi(aj.c_str());
-            auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4j));
-            auto it_qj = std::find(vj.first.begin(), vj.first.end(), std::to_string(result4j));
+            size_t result4j = qi + aj;
+            auto it_aj = std::find(vj.second.begin(), vj.second.end(), result4j);
+            auto it_qj = std::find(vj.first.begin(), vj.first.end(), result4j);
             if (it_aj != vj.second.end()) // 如果解决了问题，应当去查询该结果是否解决了vi的QBag中的问题
             {
-                auto it_qi = std::find(vi.first.begin(), vi.first.end(), std::to_string(result4j));
-                auto it_ai = std::find(vi.second.begin(), vi.second.end(), std::to_string(result4j));
+                auto it_qi = std::find(vi.first.begin(), vi.first.end(), result4j);
+                auto it_ai = std::find(vi.second.begin(), vi.second.end(), result4j);
                 if (it_qi != vi.first.end() && it_ai == vi.second.end()) // 如果解决了vi的QBag的问题并且vi的ABag没有这个答案，则更新vi的ABag
-                    //vi.second.emplace_back(std::to_string(result4j));
                     via = true;
             }
             else // 如果没有解决问题，并且如果QBag中没有相同的问题，则新增一则问题
@@ -97,33 +96,32 @@ namespace st
                     vjq = true;
 
             /* vj -> vi  */
-            uint32_t result4i = std::atoi(qj.c_str()) + std::atoi(ai.c_str());
-            auto it_ai = std::find(vi.second.begin(), vi.second.end(), std::to_string(result4i));
-            auto it_qi = std::find(vi.first.begin(), vi.first.end(), std::to_string(result4i));
+            size_t result4i = qj + ai;
+            auto it_ai = std::find(vi.second.begin(), vi.second.end(), result4i);
+            auto it_qi = std::find(vi.first.begin(), vi.first.end(), result4i);
             if (it_ai != vi.second.end()) // 如果解决了问题，应当去查询该结果是否解决了vj的QBag中的问题
             {
-                auto it_qj = std::find(vj.first.begin(), vj.first.end(), std::to_string(result4i));
-                auto it_aj = std::find(vj.second.begin(), vj.second.end(), std::to_string(result4i));
+                auto it_qj = std::find(vj.first.begin(), vj.first.end(), result4i);
+                auto it_aj = std::find(vj.second.begin(), vj.second.end(), result4i);
                 if (it_qj != vj.first.end() && it_aj == vj.second.end()) // 如果解决了vj的QBag的问题并且vj的ABag没有对应的答案，则更新vj的ABag
                     vja = true;
             }
             else // 如果没有解决问题，并且如果vi的QBag中没有相同的问题，则新增一则问题
                 if (it_qi == vi.first.end())
-                    //vi.first.emplace_back(std::to_string(result4i));
                     viq = true;
             
             //滞后更新
-            if(viq)
-                vj.first.emplace_back(std::to_string(result4j));
+            if(viq)    
+                vi.first.emplace_back(result4i);
+            if (vja)
+                vj.second.emplace_back(result4i);
             if(via)
-                vi.second.emplace_back(std::to_string(result4j));
+                vi.second.emplace_back(result4j);
             if(vjq)
-                vi.first.emplace_back(std::to_string(result4i));
-            if(vja)
-                vj.second.emplace_back(std::to_string(result4i));
+                vj.first.emplace_back(result4j);
         }
 
-        virtual std::pair<std::vector<std::string>, std::vector<std::string> >getVectors(size_t index)
+        virtual std::pair<std::vector<size_t>, std::vector<size_t> >getVectors(size_t index)
         {
             if(m_interactive_instances.find(index) != m_interactive_instances.end())
                 return m_interactive_instances[index];
@@ -159,20 +157,20 @@ namespace st
             file.close(); // Close the file when done
         }
     protected:
-        virtual void align(std::vector<std::string>& A, std::vector<std::string>& B) {
+        virtual void align(std::vector<size_t>& A, std::vector<size_t>& B) {
             // 将A和B转换为集合，以便进行集合操作
-            std::set<std::string> setA(A.begin(), A.end());
-            std::set<std::string> setB(B.begin(), B.end());
+            std::set<size_t> setA(A.begin(), A.end());
+            std::set<size_t> setB(B.begin(), B.end());
 
             // 计算交集
-            std::vector<std::string> intersection;
+            std::vector<size_t> intersection;
             std::set_intersection(setA.begin(), setA.end(), setB.begin(), setB.end(), std::back_inserter(intersection));
 
             // 计算差集
-            std::vector<std::string> differenceA;
+            std::vector<size_t> differenceA;
             std::set_difference(setA.begin(), setA.end(), setB.begin(), setB.end(), std::back_inserter(differenceA));
 
-            std::vector<std::string> differenceB;
+            std::vector<size_t> differenceB;
             std::set_difference(setB.begin(), setB.end(), setA.begin(), setA.end(), std::back_inserter(differenceB));
 
             // 对交集和差集进行排序
@@ -191,7 +189,7 @@ namespace st
             B.insert(B.end(), differenceB.begin(), differenceB.end());
         }
     private:
-        std::map<size_t, std::pair<std::vector<std::string>, std::vector<std::string> > > m_interactive_instances;
+        std::map<size_t, std::pair<std::vector<size_t>, std::vector<size_t> > > m_interactive_instances;
     };
 }
 

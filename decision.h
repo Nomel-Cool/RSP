@@ -101,10 +101,29 @@ protected:
 		return sum / (X.size() - 1);
 	}
 
-	size_t closestToExpectation(const std::vector<double>& vec, double expectation) 
+	size_t closestToExpectation(const std::vector<double>& vec, double expectation)
 	{
-		return std::distance(vec.begin(), std::min_element(vec.begin(), vec.end(),
-			[expectation](const auto& a, const auto& b){ return std::abs(a - expectation) < std::abs(b - expectation); }));
+		std::vector<size_t> candidates;
+		double min_diff = std::numeric_limits<double>::max();
+
+		for (size_t i = 0; i < vec.size(); ++i)
+		{
+			double diff = std::abs(vec[i] - expectation);
+			if (diff < min_diff)
+			{
+				min_diff = diff;
+				candidates.clear();
+				candidates.push_back(i);
+			}
+			else if (diff == min_diff)
+				candidates.push_back(i);
+		}
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		std::uniform_int_distribution<> distrib(0, candidates.size() - 1);
+
+		return candidates[distrib(gen)];
 	}
 
 	// 生成交互序列

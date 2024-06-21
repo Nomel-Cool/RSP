@@ -42,9 +42,7 @@ public:
 	{
 		r.show();
 		for (auto e : v.getStatus())
-		{
 			printf(e.c_str());
-		}
 	}
 	st::reality<N> getR()
 	{
@@ -88,8 +86,15 @@ public:
 	{
 		std::ifstream file("interaction_orders.csv");
 		std::string line;
+		std::vector<std::string> lines;
 		while (std::getline(file, line))
 		{
+			lines.push_back(line);
+		}
+		// 每次处理最新（最后一行）的一行
+		if (!lines.empty())
+		{
+			line = lines.back();
 			std::istringstream iss(line);
 			std::string order, node_id, item_i, item_j, e_i, e_j;
 			std::getline(iss, order, ',');
@@ -107,6 +112,7 @@ public:
 				env[nodeId].set(i, j, index_i, index_j);
 		}
 	}
+
 	void statisticConvergence()
 	{
 		std::map<std::pair<size_t, size_t>, std::vector<double>> accuracy_rates;
@@ -117,10 +123,15 @@ public:
 
 			for (size_t j = 0; j < N; ++j)
 			{
-				// 确定询问元，提取它的QBag作为集合
+				// 确定询问元，提取它的QBag-ABag作为集合
 				auto vectors4Q = r.getVectors(j);
-				auto vec4Q = vectors4Q.first;
-				std::set<std::string> set4Q(vec4Q.begin(), vec4Q.end());
+				auto vec4QBag = vectors4Q.first;
+				auto vec4ABag = vectors4Q.second;
+				std::set<size_t> set4QBag(vec4QBag.begin(), vec4QBag.end());
+				std::set<size_t> set4ABag(vec4ABag.begin(), vec4ABag.end());
+				// 求set4Q-set4A
+				std::vector<size_t> qa_difference;
+				std::set_difference(set4QBag.begin(), set4QBag.end(), set4ABag.begin(), set4ABag.end(), std::inserter(qa_difference, qa_difference.begin()));
 
 				for (size_t k = 0; k < N; ++k)
 				{
@@ -133,19 +144,35 @@ public:
 					auto vectors4A = r.getVectors(k);
 					auto differenceSets = calculateDifferenceSet(vectors4A.second);
 
-					// 计算QBag与ABag差值集的交集
+					// 计算set4QBag与differenceSets的交集
+					std::vector<std::set<size_t>> intersections;
 					for (size_t u = 0; u < differenceSets.size(); ++u)
 					{
-						std::set<std::string> intersection;
-						std::set_intersection(set4Q.begin(), set4Q.end(), differenceSets[u].begin(), differenceSets[u].end(),
-							std::inserter(intersection, intersection.begin()));
-
-						// 计算交集集合的势和QBag的势的商
-						double rate = static_cast<double>(intersection.size()) / static_cast<double>(vec4Q.size());
-						
-						// 添加到结果数组
-						rates.emplace_back(rate);
+						std::set<size_t> temp;
+						std::set_intersection(set4QBag.begin(), set4QBag.end(), differenceSets[u].begin(), differenceSets[u].end(),
+							std::inserter(temp, temp.begin()));
+						intersections.emplace_back(temp);
 					}
+
+					 //计算qa_difference每个元素减去vectors4A.second每个元素的集合φ
+					std::set<size_t> phi;
+					for (const auto& element : qa_difference)
+						for (const auto& a : vectors4A.second)
+							phi.insert(element - a);
+
+					// 计算φ与intersections的交集η
+					std::vector<std::set<size_t>> eta;
+					for (size_t u = 0; u < intersections.size(); ++u)
+					{
+						std::set<size_t> temp;
+						std::set_intersection(phi.begin(), phi.end(), intersections[u].begin(), intersections[u].end(),
+							std::inserter(temp, temp.begin()));
+						eta.emplace_back(temp);
+					}
+
+					// 计算η的势和set4QBag的势的商,添加到结果数组
+					for (size_t u = 0; u < eta.size(); ++u)
+						rates.emplace_back(static_cast<double>(eta[u].size()) / static_cast<double>(set4QBag.size()));
 
 					// 更新交互命中概率数组
 					accuracy_rates[std::make_pair(j, k)] = rates;
@@ -201,20 +228,20 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<std::set<std::string>> calculateDifferenceSet(std::vector<std::string> vec)
+	std::vector<std::set<size_t>> calculateDifferenceSet(std::vector<size_t> vec)
 	{
-		std::sort(vec.begin(), vec.end(), [](const std::string& a, const std::string& b) {
-			return std::stoi(a) < std::stoi(b);
+		std::sort(vec.begin(), vec.end(), [](const size_t& a, const size_t& b) {
+			return a < b;
 			});
-		std::vector<std::set<std::string>> differenceSets(vec.size());
+		std::vector<std::set<size_t>> differenceSets(vec.size());
 		for (size_t i = 0; i < vec.size(); ++i)
 		{
-			int ai = std::stoi(vec[i]);
+			size_t ai = vec[i];
 			for (size_t k = i; k < vec.size(); ++k)
 			{
-				int ak = std::stoi(vec[k]);
+				size_t ak = vec[k];
 				// 因为vec已经排序，所以ak - ai一定是非负的
-				differenceSets[i].insert(std::to_string(ak - ai));
+				differenceSets[i].insert(ak - ai);
 			}
 		}
 		return differenceSets;
