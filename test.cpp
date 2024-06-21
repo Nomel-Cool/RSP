@@ -7,7 +7,7 @@ using namespace std;
 
 int main()
 {
-	decision decise;
+	decision<5> decise;
 	dispatcher<5, 1, 5, 12> dispatch;
 	while(true)
 	{		
@@ -27,10 +27,10 @@ int main()
 		dispatch.show(0);
 
 		 //ÊÖ¶¯µü´ú
-		system("pause");
+		//system("pause");
 
-		//Sleep(1000);
-	}
+		Sleep(1000);
+ 	}
 
 	//system("clean_csv_contents.bat");
 	return 0;

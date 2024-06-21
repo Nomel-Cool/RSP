@@ -142,7 +142,7 @@ public:
 
 					// 确定应答元，提取它的ABag作差值集
 					auto vectors4A = r.getVectors(k);
-					auto differenceSets = calculateDifferenceSet(vectors4A.second);
+					auto differenceSets = calculateHitDifferenceSet(vectors4A.second);
 
 					// 计算set4QBag与differenceSets的交集
 					std::vector<std::set<size_t>> intersections;
@@ -154,18 +154,16 @@ public:
 						intersections.emplace_back(temp);
 					}
 
-					 //计算qa_difference每个元素减去vectors4A.second每个元素的集合φ
-					std::set<size_t> phi;
-					for (const auto& element : qa_difference)
-						for (const auto& a : vectors4A.second)
-							phi.insert(element - a);
+					//计算qa_difference每个元素减去vectors4A.second每个元素的集合φ
+					auto phi = calculateSolveDifferenceSet(vectors4A.second, qa_difference);
 
 					// 计算φ与intersections的交集η
+					if (intersections.size() != phi.size()) throw;
 					std::vector<std::set<size_t>> eta;
 					for (size_t u = 0; u < intersections.size(); ++u)
 					{
 						std::set<size_t> temp;
-						std::set_intersection(phi.begin(), phi.end(), intersections[u].begin(), intersections[u].end(),
+						std::set_intersection(phi[u].begin(), phi[u].end(), intersections[u].begin(), intersections[u].end(),
 							std::inserter(temp, temp.begin()));
 						eta.emplace_back(temp);
 					}
@@ -228,7 +226,7 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<std::set<size_t>> calculateDifferenceSet(std::vector<size_t> vec)
+	std::vector<std::set<size_t>> calculateHitDifferenceSet(std::vector<size_t> vec)
 	{
 		std::sort(vec.begin(), vec.end(), [](const size_t& a, const size_t& b) {
 			return a < b;
@@ -246,6 +244,23 @@ protected:
 		}
 		return differenceSets;
 	}
+
+	std::vector<std::set<size_t>> calculateSolveDifferenceSet(std::vector<size_t> vec, std::vector<size_t> vec_solve)
+	{
+		std::vector<std::set<size_t>> differenceSets(vec.size());
+		for (size_t i = 0; i < vec.size(); ++i)
+		{
+			size_t ai = vec[i];
+			for (size_t k = 0; k < vec_solve.size(); ++k)
+			{
+				size_t sk = vec_solve[k];
+				// 因为vec已经排序，所以ak - ai一定是非负的
+				differenceSets[i].insert(sk - ai);
+			}
+		}
+		return differenceSets;
+	}
+
 private:
 	std::vector<Node<N, max_value, max_size> > env;
 };

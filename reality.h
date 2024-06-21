@@ -131,7 +131,7 @@ namespace st
         {
             std::ofstream file("interaction_output.csv");
 
-            // Write data
+            // Write data，在这里顺便帮我把QBag和ABag都排序了
             for (auto& pair : m_interactive_instances)
             {
                 file << pair.first; // Write the key

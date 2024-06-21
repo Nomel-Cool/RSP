@@ -7,13 +7,14 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <map>
 #include <utility>
 #include <cmath>
 #include <random>
 #include <numeric>
+#include <algorithm>
+
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
-using CovarianceData = std::map<std::pair<size_t, size_t>, double>;
+using BalanceData = std::map<std::pair<size_t, size_t>, double>;
 using SizeT5 = std::tuple<size_t, size_t, size_t, size_t, size_t>;
 
 /*概要设计
@@ -24,6 +25,7 @@ gainFeedback() 公有 用于读取反馈层写入的交互反馈参数文件
 processingarguments() 保护 读取参数文件后调用算法调参生成下一次的交互序列
 makeOrders() 公有 将算法生成的交互序列写入文件，供反馈层读取
 */
+template<size_t max_size>
 class decision
 {
 public:
@@ -92,7 +94,7 @@ protected:
 		return meanXY - expectation * expectation;
 	}
 
-	// 计算样本方差
+	// 计算样本方差，这使得初始状态即使全是0，也会产生方差均值上的差异
 	double variance(const std::vector<double>& X, double expectation)
 	{
 		double sum = 0;
@@ -126,10 +128,50 @@ protected:
 		return candidates[distrib(gen)];
 	}
 
+	// 平衡度计算公式
+	double balanceDegree(std::vector<double> list_a, std::vector<double> list_b, double standard_expectation)
+	{
+		double result = 0.0;
+		int n = list_a.size();
+		int m = list_b.size();
+
+		// 计算 list_a 的部分
+		for (int i = 0; i < n; ++i)
+			result += (list_a[i] - standard_expectation) * (list_a[i] - standard_expectation) * std::pow(10, -i);
+
+		// 计算 list_b 的部分
+		for (int j = 0; j < m; ++j)
+			result += (list_b[j] - standard_expectation) * (list_b[j] - standard_expectation) * std::pow(10, -j - n);
+
+		return result;
+	}
+
+	// 惩罚函数
+	bool penalty(size_t i, size_t j, std::vector<double> list_a, std::vector<double> list_b)
+	{
+		// 处理异常样本，如果样本点的所有元素都是0，返回负无穷大
+		if (std::all_of(list_a.begin(), list_a.end(), [](double i) { return i == 0.0; }) &&
+			std::all_of(list_b.begin(), list_b.end(), [](double i) { return i == 0.0; }))
+		{
+			if (m_penalty_data.find({ i,j }) != m_penalty_data.end())
+				if (++m_penalty_data[{i, j}] > 5 || ++m_penalty_data[{j, i}])
+					return true;
+				else
+					return false;
+			else
+			{
+				m_penalty_data[{i, j}] = 0;
+				m_penalty_data[{j, i}] = 0;
+				return false;
+			}
+		}
+		return false;
+	}
+
 	// 生成交互序列
 	virtual SizeT5 processingarguments(AccuracyData accuracy_datas, double expectation = 0.5)
 	{
-		CovarianceData covarianceData;
+		BalanceData balanceData;
 		for (const auto& _pair : accuracy_datas)
 		{
 			size_t i = _pair.first.first;
@@ -137,19 +179,26 @@ protected:
 
 			// 如果存在[j,i]的数据，计算协方差并存储
 			if (accuracy_datas.find({ j, i }) != accuracy_datas.end())
-			{
-				double cov = covariance(accuracy_datas[{i, j}], accuracy_datas[{j, i}], expectation);
-				double avgVariance = (variance(accuracy_datas[{i, j}], expectation) + variance(accuracy_datas[{j, i}], expectation)) / 2;
-				covarianceData[{i, j}] = avgVariance * std::abs(cov);
-			}
+				balanceData[{i, j}] = balanceDegree(accuracy_datas[{i, j}], accuracy_datas[{j, i}], expectation);
 		}
 
 		// 找出新计算方式下的最大值
-		auto maxCovPair = *std::max_element(covarianceData.begin(), covarianceData.end(),
+		auto maxCovPair = *std::max_element(balanceData.begin(), balanceData.end(),
 			[](const auto& p1, const auto& p2){ return p1.second < p2.second; });
 
 		size_t _i = maxCovPair.first.first;
 		size_t _j = maxCovPair.first.second;
+
+		bool isPenal = penalty(_i, _j, accuracy_datas[{_i, _j}], accuracy_datas[{_j, _i}]);
+		if (isPenal)
+		{
+			m_penalty_data[{_i, _j}] = 0;
+			m_penalty_data[{_j, _i}] = 0;
+			_i = rand() % max_size;
+			_j = rand() % max_size;
+			if (_i == _j)
+				_j = (_i + 1) % max_size;
+		}
 
 		// 找到离expectation最近的下标，这是作为询问元的下标
 		size_t index4j = closestToExpectation(accuracy_datas[{_i, _j}], expectation);
@@ -159,7 +208,7 @@ protected:
 		std::ifstream inFile("interaction_orders.csv");
 		std::string line;
 		size_t t = 0;
-		if (inFile.peek() != std::ifstream::traits_type::eof()) {
+		if (inFile.peek() != std::ifstream::traits_type::eof())
 			while (std::getline(inFile, line))
 			{
 				std::istringstream iss(line);
@@ -167,13 +216,12 @@ protected:
 				std::getline(iss, token, ',');
 				t = std::stoi(token);
 			}
-		}
 		inFile.close();
 
 		return std::make_tuple(t + 1, _i, _j, index4i, index4j);
 	}
 private:
-	
+	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
 };
 
 #endif // !DECISION_H
