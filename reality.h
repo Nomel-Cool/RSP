@@ -71,6 +71,14 @@ public:
             m_interactive_instances[i].emplace_back(std::make_pair(0, "0"));
             m_interactive_instances[i].emplace_back(std::make_pair(1, "1"));
 
+            // 一定要去重，不然后续很难利用集合计算Pfi
+            // 对 m_interactive_instances[i] 进行排序
+            std::sort(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
+
+            // 删除 m_interactive_instances[i] 中的重复元素
+            auto it = std::unique(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
+            m_interactive_instances[i].erase(it, m_interactive_instances[i].end());
+
             std::sort(m_interactive_instances[i].begin(), m_interactive_instances[i].end(), 
                 [](const auto& p1, const auto& p2) 
                 {
@@ -163,7 +171,7 @@ public:
         }
     }
 
-    virtual std::vector<std::pair<size_t, std::string>>getVectors(size_t index)
+    virtual std::vector<std::pair<size_t, std::string>>getDataPairs(size_t index)
     {
         if(m_interactive_instances.find(index) != m_interactive_instances.end())
             return m_interactive_instances[index];
