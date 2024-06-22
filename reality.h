@@ -175,6 +175,7 @@ public:
     {
         if(m_interactive_instances.find(index) != m_interactive_instances.end())
             return m_interactive_instances[index];
+        return std::vector<std::pair<size_t, std::string>>();
     }
 
     virtual void show()

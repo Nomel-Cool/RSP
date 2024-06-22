@@ -27,9 +27,9 @@ int main()
 		dispatch.show(0);
 
 		 //ÊÖ¶¯µü´ú
-		//system("pause");
+		system("pause");
 
-		Sleep(1000);
+		//Sleep(1000);
  	}
 
 	//system("clean_csv_contents.bat");
