@@ -44,19 +44,19 @@ public:
 		for (auto e : v.getStatus())
 			printf(e.c_str());
 	}
-	st::reality<N> getR()
+	reality<N> getR()
 	{
 		return r;
 	}
-	st::virtuality<N> getV()
+	virtuality<N> getV()
 	{
 		return v;
 	}
 private:
 	int groupId;
 	bool binded;
-	st::reality<N> r;
-	st::virtuality<N> v;
+	reality<N> r;
+	virtuality<N> v;
 };
 
 /*概要设计
@@ -124,14 +124,13 @@ public:
 			for (size_t j = 0; j < N; ++j)
 			{
 				// 确定询问元，提取它的QBag-ABag作为集合
-				auto vectors4Q = r.getVectors(j);
-				auto vec4QBag = vectors4Q.first;
-				auto vec4ABag = vectors4Q.second;
-				std::set<size_t> set4QBag(vec4QBag.begin(), vec4QBag.end());
-				std::set<size_t> set4ABag(vec4ABag.begin(), vec4ABag.end());
-				// 求set4Q-set4A
-				std::vector<size_t> qa_difference;
-				std::set_difference(set4QBag.begin(), set4QBag.end(), set4ABag.begin(), set4ABag.end(), std::inserter(qa_difference, qa_difference.begin()));
+				auto pairs4Q = r.getDataPairs(j);
+				std::vector<std::pair<size_t, std::string>> qa_difference;
+
+				// 找出所有超越元，放入qa_difference
+				for (const auto& pair : pairs4Q)
+					if (pair.second.find("+") != std::string::npos) // 如果找到"+"，则为超越元
+						qa_difference.push_back(pair);
 
 				for (size_t k = 0; k < N; ++k)
 				{
@@ -141,21 +140,26 @@ public:
 					std::vector<double> rates;
 
 					// 确定应答元，提取它的ABag作差值集
-					auto vectors4A = r.getVectors(k);
-					auto differenceSets = calculateHitDifferenceSet(vectors4A.second);
+					auto pairs4A = r.getDataPairs(k);
+					auto differenceSets = calculateHitDifferenceSet(pairs4A);
 
-					// 计算set4QBag与differenceSets的交集
+					// 计算{pairs4Q.first}与differenceSets的交集
 					std::vector<std::set<size_t>> intersections;
-					for (size_t u = 0; u < differenceSets.size(); ++u)
+					std::set<size_t> set4first;
+					for (const auto& pair : pairs4Q)
+						set4first.insert(pair.first);
+
+					// 计算 set4first 与 differenceSets 的每一个集合的交集
+					for (const auto& set : differenceSets)
 					{
-						std::set<size_t> temp;
-						std::set_intersection(set4QBag.begin(), set4QBag.end(), differenceSets[u].begin(), differenceSets[u].end(),
-							std::inserter(temp, temp.begin()));
-						intersections.emplace_back(temp);
+						std::set<size_t> intersection;
+						std::set_intersection(set4first.begin(), set4first.end(), set.begin(), set.end(),
+							std::inserter(intersection, intersection.begin()));
+						intersections.push_back(intersection);
 					}
 
-					//计算qa_difference每个元素减去vectors4A.second每个元素的集合φ
-					auto phi = calculateSolveDifferenceSet(vectors4A.second, qa_difference);
+					//计算qa_difference每个元素减去pairs4A.first每个元素的集合φ
+					auto phi = calculateSolveDifferenceSet(pairs4A, qa_difference);
 
 					// 计算φ与intersections的交集η
 					if (intersections.size() != phi.size()) throw;
@@ -170,7 +174,7 @@ public:
 
 					// 计算η的势和set4QBag的势的商,添加到结果数组
 					for (size_t u = 0; u < eta.size(); ++u)
-						rates.emplace_back(static_cast<double>(eta[u].size()) / static_cast<double>(set4QBag.size()));
+						rates.emplace_back(static_cast<double>(eta[u].size()) / static_cast<double>(pairs4Q.size()));
 
 					// 更新交互命中概率数组
 					accuracy_rates[std::make_pair(j, k)] = rates;
@@ -226,18 +230,19 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<std::set<size_t>> calculateHitDifferenceSet(std::vector<size_t> vec)
+	std::vector<std::set<size_t>> calculateHitDifferenceSet(std::vector<std::pair<size_t, std::string> > vec)
 	{
-		std::sort(vec.begin(), vec.end(), [](const size_t& a, const size_t& b) {
-			return a < b;
+		std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b)
+			{
+				return a.first < b.first;
 			});
 		std::vector<std::set<size_t>> differenceSets(vec.size());
 		for (size_t i = 0; i < vec.size(); ++i)
 		{
-			size_t ai = vec[i];
+			size_t ai = vec[i].first;
 			for (size_t k = i; k < vec.size(); ++k)
 			{
-				size_t ak = vec[k];
+				size_t ak = vec[k].first;
 				// 因为vec已经排序，所以ak - ai一定是非负的
 				differenceSets[i].insert(ak - ai);
 			}
@@ -245,15 +250,15 @@ protected:
 		return differenceSets;
 	}
 
-	std::vector<std::set<size_t>> calculateSolveDifferenceSet(std::vector<size_t> vec, std::vector<size_t> vec_solve)
+	std::vector<std::set<size_t>> calculateSolveDifferenceSet(std::vector<std::pair<size_t, std::string> > vec, std::vector<std::pair<size_t, std::string> > vec_solve)
 	{
 		std::vector<std::set<size_t>> differenceSets(vec.size());
 		for (size_t i = 0; i < vec.size(); ++i)
 		{
-			size_t ai = vec[i];
+			size_t ai = vec[i].first;
 			for (size_t k = 0; k < vec_solve.size(); ++k)
 			{
-				size_t sk = vec_solve[k];
+				size_t sk = vec_solve[k].first;
 				// 因为vec已经排序，所以ak - ai一定是非负的
 				differenceSets[i].insert(sk - ai);
 			}
