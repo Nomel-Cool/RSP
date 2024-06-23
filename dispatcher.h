@@ -10,6 +10,8 @@
 #include <sstream>
 #include <string>
 
+using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double >>;
+
 /*概要设计
 成员变量：
 reality,virtuality各一个对象
@@ -112,81 +114,69 @@ public:
 				env[nodeId].set(i, j, index_i, index_j);
 		}
 	}
-
 	void statisticConvergence()
 	{
-		std::map<std::pair<size_t, size_t>, std::vector<double>> accuracy_rates;
+		AccuracyData condense_rates;
 
 		for (size_t i = 0; i < env.size(); ++i)
 		{
-			auto r = env[i].getR();
+			reality<N> r = env[i].getR();
 
-			for (size_t j = 0; j < N; ++j)
+			for (size_t u = 0; u < N; ++u)
 			{
-				// 确定询问元，提取它的QBag-ABag作为集合
-				auto pairs4Q = r.getDataPairs(j);
-				std::vector<std::pair<size_t, std::string>> qa_difference;
+				// 求取第u个交互元的前缀差值集
+				auto e = r.getDataPairs(u);
+				auto diffSets = calculateDifference(e);
 
-				// 找出所有超越元，放入qa_difference
-				for (const auto& pair : pairs4Q)
-					if (pair.second.find("+") != std::string::npos) // 如果找到"+"，则为超越元
-						qa_difference.push_back(pair);
-
-				for (size_t k = 0; k < N; ++k)
+				// 考量第v个交互元与第u个交互元交互时
+				for (size_t v = 0; v < N; ++v)
 				{
-					if (k == j)
+					if (u == v)
 						continue;
 
-					std::vector<double> rates;
+					auto w = r.getDataPairs(v);
 
-					// 确定应答元，提取它的ABag作差值集
-					auto pairs4A = r.getDataPairs(k);
-					auto differenceSets = calculateHitDifferenceSet(pairs4A);
+					// 计算平衡度，首先放入压缩信息
+					double balance_degree = calculateBalanceDegree(w);
+					condense_rates[{v, u}].push_back(balance_degree);
 
-					// 计算{pairs4Q.first}与differenceSets的交集
-					std::vector<std::set<size_t>> intersections;
-					std::set<size_t> set4first;
-					for (const auto& pair : pairs4Q)
-						set4first.insert(pair.first);
-
-					// 计算 set4first 与 differenceSets 的每一个集合的交集
-					for (const auto& set : differenceSets)
+					// 求取Ak与diffSets(k-1)的交集
+					for (size_t j = 1; j < diffSets.size(); ++j)
 					{
-						std::set<size_t> intersection;
-						std::set_intersection(set4first.begin(), set4first.end(), set.begin(), set.end(),
-							std::inserter(intersection, intersection.begin()));
-						intersections.push_back(intersection);
+						auto it_Ak_begin = std::find_if(w.begin(), w.end(),
+							[j](const std::pair<size_t, std::string>& item)
+							{
+								return std::count(item.second.begin(), item.second.end(), '+') == j - 1;
+							});
+
+						auto it_Ak_end = std::find_if(w.begin(), w.end(),
+							[j](const std::pair<size_t, std::string>& item)
+							{
+								return std::count(item.second.begin(), item.second.end(), '+') == j;
+							});
+
+						std::set<size_t> Ak;
+						for (auto it = it_Ak_begin; it != it_Ak_end; ++it)
+							Ak.insert(it->first);
+
+						// 计算超验收缩率
+						double rate = calculateRates(Ak, diffSets[j - 1]);
+
+						// 记录到超验收缩率数组
+						condense_rates[{v,u}].push_back(rate);
+
+						// 如果这是最后一个Ak，则停止计算
+						if (it_Ak_end == w.end())
+							break;
 					}
-
-					//计算qa_difference每个元素减去pairs4A.first每个元素的集合φ
-					auto phi = calculateSolveDifferenceSet(pairs4A, qa_difference);
-
-					// 计算φ与intersections的交集η
-					if (intersections.size() != phi.size()) throw;
-					std::vector<std::set<size_t>> eta;
-					for (size_t u = 0; u < intersections.size(); ++u)
-					{
-						std::set<size_t> temp;
-						std::set_intersection(phi[u].begin(), phi[u].end(), intersections[u].begin(), intersections[u].end(),
-							std::inserter(temp, temp.begin()));
-						eta.emplace_back(temp);
-					}
-
-					// 计算η的势和set4QBag的势的商,添加到结果数组
-					for (size_t u = 0; u < eta.size(); ++u)
-						rates.emplace_back(static_cast<double>(eta[u].size()) / static_cast<double>(pairs4Q.size()));
-
-					// 更新交互命中概率数组
-					accuracy_rates[std::make_pair(j, k)] = rates;
 				}
 			}
 		}
 
-		writeAccuracyToFile(accuracy_rates,"interaction_accuracy.csv");
+		writeToFile(condense_rates,"interaction_accuracy.csv");
 	}
 protected:
-	using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
-	void writeAccuracyToFile(AccuracyData& data, const std::string& filename)
+	void writeToFile(AccuracyData& data, const std::string& filename)
 	{
 		std::ofstream outFile(filename);
 
@@ -230,42 +220,71 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<std::set<size_t>> calculateHitDifferenceSet(std::vector<std::pair<size_t, std::string> > vec)
+	std::vector<std::set<size_t> > calculateDifference(const std::vector<std::pair<size_t, std::string>>& e)
 	{
-		std::sort(vec.begin(), vec.end(), [](const auto& a, const auto& b)
-			{
-				return a.first < b.first;
-			});
-		std::vector<std::set<size_t>> differenceSets(vec.size());
-		for (size_t i = 0; i < vec.size(); ++i)
+		std::vector<std::set<size_t>> result;
+		// 求取Ak所咋数组的结束时的下标，最多k不超过e.size()，因此作好提前阶段这个for循环的准备
+		for (size_t k = 0; k < e.size(); ++k)
 		{
-			size_t ai = vec[i].first;
-			for (size_t k = i; k < vec.size(); ++k)
+			auto it_k = std::find_if(e.begin(), e.end(),
+				[k](const std::pair<size_t, std::string > &item)
+				{
+					return std::count(item.second.begin(), item.second.end(), '+') == k;
+				});
+
+			//开始求取所有到达it_k以前的差值
+			std::set<size_t> diffSet;
+			for (auto it_i = e.begin(); it_i != it_k; ++it_i)
 			{
-				size_t ak = vec[k].first;
-				// 因为vec已经排序，所以ak - ai一定是非负的
-				differenceSets[i].insert(ak - ai);
+				for (auto it_j = it_i; it_j != it_k; ++it_j) // 允许零元存在，这意味着直接解决问题
+				{
+					size_t diff = (it_j->first >= it_i->first) ? (it_j->first - it_i->first) : (it_i->first - it_j->first);
+					diffSet.insert(diff);
+				}
 			}
+			result.push_back(diffSet);
+
+			// 如果这是最后一个Ak，则停止计算
+			if (it_k == e.end())
+				break;
 		}
-		return differenceSets;
+		return result;
 	}
 
-	std::vector<std::set<size_t>> calculateSolveDifferenceSet(std::vector<std::pair<size_t, std::string> > vec, std::vector<std::pair<size_t, std::string> > vec_solve)
+	double calculateRates(std::set<size_t> Ak, std::set<size_t> differSet)
 	{
-		std::vector<std::set<size_t>> differenceSets(vec.size());
-		for (size_t i = 0; i < vec.size(); ++i)
-		{
-			size_t ai = vec[i].first;
-			for (size_t k = 0; k < vec_solve.size(); ++k)
-			{
-				size_t sk = vec_solve[k].first;
-				// 因为vec已经排序，所以ak - ai一定是非负的
-				differenceSets[i].insert(sk - ai);
-			}
-		}
-		return differenceSets;
+		// 计算Ak与differSet的交集intersection,并计算intersection的势与Ak的势的商并返回
+		std::vector<size_t> intersection;
+		std::set_intersection(Ak.begin(), Ak.end(), differSet.begin(), differSet.end(), std::back_inserter(intersection));
+		double rate = static_cast<double>(intersection.size()) / Ak.size();
+		return rate;
 	}
 
+	double calculateBalanceDegree(const std::vector<std::pair<size_t, std::string>>& data_pair)
+	{
+		double expectation = 0.0;
+		for (size_t j = 1; j < data_pair.size(); ++j)
+		{
+			auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
+				[j](const std::pair<size_t, std::string>& item)
+				{
+					return std::count(item.second.begin(), item.second.end(), '+') == j - 1;
+				});
+
+			auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
+				[j](const std::pair<size_t, std::string>& item)
+				{
+					return std::count(item.second.begin(), item.second.end(), '+') == j;
+				});
+			size_t amount_ak = std::distance(it_Ak_begin, it_Ak_end);
+			expectation += (j * amount_ak / data_pair.size());
+
+			// 如果这是最后一个Ak，则停止计算
+			if (it_Ak_end == data_pair.end())
+				break;
+		}
+		return expectation;
+	}
 private:
 	std::vector<Node<N, max_value, max_size> > env;
 };
