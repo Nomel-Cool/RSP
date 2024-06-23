@@ -141,7 +141,7 @@ public:
 					condense_rates[{v, u}].push_back(balance_degree);
 
 					// 求取Ak与diffSets(k-1)的交集
-					for (size_t j = 1; j < diffSets.size(); ++j)
+					for (size_t j = 1; j <= diffSets.size(); ++j)
 					{
 						auto it_Ak_begin = std::find_if(w.begin(), w.end(),
 							[j](const std::pair<size_t, std::string>& item)
@@ -277,7 +277,7 @@ protected:
 					return std::count(item.second.begin(), item.second.end(), '+') == j;
 				});
 			size_t amount_ak = std::distance(it_Ak_begin, it_Ak_end);
-			expectation += (j * amount_ak / data_pair.size());
+			expectation += (static_cast<double>(j) * static_cast<double>(amount_ak) / static_cast<double>(data_pair.size()));
 
 			// 如果这是最后一个Ak，则停止计算
 			if (it_Ak_end == data_pair.end())

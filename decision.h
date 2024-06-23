@@ -50,10 +50,15 @@ public:
 			std::string token;
 			std::getline(iss, token, ',');
 			size_t i = std::stoi(token);
+			
 			std::getline(iss, token, ',');
 			size_t j = std::stoi(token);
 
+			std::getline(iss, token, ',');
+			double balance_degree = std::stod(token);
+
 			std::vector<double> rates;
+			rates.push_back(balance_degree);
 			while (std::getline(iss, token, ','))
 			{
 				rates.push_back(std::stod(token));
@@ -63,8 +68,7 @@ public:
 		}
 		inFile.close();
 
-		// 暂时先用0.5，后面需要读配置文件改变这个参数
-		return processingarguments(data, 0.5);
+		return processingarguments(data);
 	}
 
 	virtual void makeOrders(SizeT5 arguments)
@@ -103,24 +107,27 @@ protected:
 		return sum / (X.size() - 1);
 	}
 
-	size_t closestToExpectation(const std::vector<double>& vec, double expectation)
+	size_t closestToExpectation(const std::vector<double>& vec)
 	{
-		std::vector<size_t> candidates;
-		double min_diff = std::numeric_limits<double>::max();
-
-		for (size_t i = 0; i < vec.size(); ++i)
+		if (vec.size() < 2)
 		{
-			double diff = std::abs(vec[i] - expectation);
-			if (diff < min_diff)
-			{
-				min_diff = diff;
-				candidates.clear();
-				candidates.push_back(i);
-			}
-			else if (diff == min_diff)
-				candidates.push_back(i);
+			throw std::invalid_argument("The input vector must have at least two elements.");
 		}
 
+		// 找出除第一个元素外的最大值
+		double max_value = *std::max_element(vec.begin() + 1, vec.end());
+
+		// 创建一个包含所有最大值索引的向量
+		std::vector<size_t> candidates;
+		for (size_t i = 1; i < vec.size(); ++i)
+		{
+			if (vec[i] == max_value)
+			{
+				candidates.push_back(i);
+			}
+		}
+
+		// 从候选索引中随机选择一个
 		std::random_device rd;
 		std::mt19937 gen(rd());
 		std::uniform_int_distribution<> distrib(0, candidates.size() - 1);
@@ -129,20 +136,10 @@ protected:
 	}
 
 	// 平衡度计算公式
-	double balanceDegree(std::vector<double> list_a, std::vector<double> list_b, double standard_expectation)
+	double balanceDegree(std::vector<double> list_a, std::vector<double> list_b)
 	{
 		double result = 0.0;
-		int n = list_a.size();
-		int m = list_b.size();
-
-		// 计算 list_a 的部分
-		for (int i = 0; i < n; ++i)
-			result += (list_a[i] - standard_expectation) * (list_a[i] - standard_expectation) * std::pow(10, -i);
-
-		// 计算 list_b 的部分
-		for (int j = 0; j < m; ++j)
-			result += (list_b[j] - standard_expectation) * (list_b[j] - standard_expectation) * std::pow(10, -j - n);
-
+		result = (list_a[0] + list_b[0]) * 0.5;
 		return result;
 	}
 
@@ -168,8 +165,18 @@ protected:
 		return false;
 	}
 
+	void executePenalty(size_t& _i, size_t& _j)
+	{
+		m_penalty_data[{_i, _j}] = 0;
+		m_penalty_data[{_j, _i}] = 0;
+		_i = rand() % max_size;
+		_j = rand() % max_size;
+		if (_i == _j)
+			_j = (_i + 1) % max_size;
+	}
+
 	// 生成交互序列
-	virtual SizeT5 processingarguments(AccuracyData accuracy_datas, double expectation = 0.5)
+	virtual SizeT5 processingarguments(AccuracyData accuracy_datas)
 	{
 		BalanceData balanceData;
 		for (const auto& _pair : accuracy_datas)
@@ -177,9 +184,9 @@ protected:
 			size_t i = _pair.first.first;
 			size_t j = _pair.first.second;
 
-			// 如果存在[j,i]的数据，计算协方差并存储
+			// 如果存在[j,i]的数据，计算平均平衡度并存储
 			if (accuracy_datas.find({ j, i }) != accuracy_datas.end())
-				balanceData[{i, j}] = balanceDegree(accuracy_datas[{i, j}], accuracy_datas[{j, i}], expectation);
+				balanceData[{i, j}] = balanceDegree(accuracy_datas[{i, j}], accuracy_datas[{j, i}]);
 		}
 
 		// 找出新计算方式下的最大值
@@ -189,20 +196,14 @@ protected:
 		size_t _i = maxCovPair.first.first;
 		size_t _j = maxCovPair.first.second;
 
+		// 重复选择多次，添加惩罚，转嫁到随机上
 		bool isPenal = penalty(_i, _j, accuracy_datas[{_i, _j}], accuracy_datas[{_j, _i}]);
 		if (isPenal)
-		{
-			m_penalty_data[{_i, _j}] = 0;
-			m_penalty_data[{_j, _i}] = 0;
-			_i = rand() % max_size;
-			_j = rand() % max_size;
-			if (_i == _j)
-				_j = (_i + 1) % max_size;
-		}
+			executePenalty(_i, _j);
 
-		// 找到离expectation最近的下标，这是作为询问元的下标
-		size_t index4j = closestToExpectation(accuracy_datas[{_i, _j}], expectation);
-		size_t index4i = closestToExpectation(accuracy_datas[{_j, _i}], expectation);
+		// 挑选最大超验收敛率的组
+		size_t index4i = closestToExpectation(accuracy_datas[{_i, _j}]);
+		size_t index4j = closestToExpectation(accuracy_datas[{_j, _i}]);
 
 		// 读取文件当前的最后一行获取上一行的序号
 		std::ifstream inFile("interaction_orders.csv");

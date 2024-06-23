@@ -1,5 +1,6 @@
 #include "dispatcher.h"
 #include "decision.h"
+//#include "reality.h"
 #include <iostream>
 #include <Windows.h>
 
@@ -10,7 +11,7 @@ int main()
 	decision<5> decise;
 	dispatcher<5, 1, 5, 12> dispatch;
 	while(true)
-	{		
+	{
 		 //统计交互参数，返回上层
 		dispatch.statisticConvergence();
 
@@ -29,7 +30,7 @@ int main()
 		 //手动迭代
 		system("pause");
 
-		//Sleep(1000);
+		// Sleep(1000);
  	}
 
 	//system("clean_csv_contents.bat");
