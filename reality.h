@@ -98,13 +98,15 @@ public:
         auto& vi = m_interactive_instances[i];
         auto& vj = m_interactive_instances[j];
 
-        size_t converted_index_i = convertIndex4Q(vi, index_i);
-        size_t converted_index_j = convertIndex4Q(vj, index_j);
+        size_t converted_index_qi = convertIndex4Q(vi, index_i);
+        size_t converted_index_qj = convertIndex4Q(vj, index_j);
+        size_t converted_index_ai = convertIndex4A(vi, index_i);
+        size_t converted_index_aj = convertIndex4A(vj, index_j);
 
-        size_t query_i = vi[converted_index_i].first;
-        std::string answer_i = vi[rand() % vi.size()].second;
-        size_t query_j = vj[converted_index_j].first;
-        std::string answer_j = vj[rand() % vj.size()].second;
+        size_t query_i = vi[converted_index_qi].first;
+        std::string answer_i = vi[converted_index_ai].second;
+        size_t query_j = vj[converted_index_qj].first;
+        std::string answer_j = vj[converted_index_aj].second;
 
         std::vector<std::pair<size_t,std::string> >::iterator storage_it_qi = vi.end(), storage_it_qj = vj.end();
         bool update_it_aj = false, update_it_ai = false;
@@ -229,7 +231,30 @@ public:
         }
     }
 
-    virtual size_t convertIndex4Q(std::vector<std::pair<size_t, std::string>> data_pair, size_t index)
+    virtual size_t convertIndex4A(const std::vector<std::pair<size_t, std::string>>& data_pair, size_t index)
+    {
+        auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
+            [index](const std::pair<size_t, std::string>& item)
+            {
+                return std::count(item.second.begin(), item.second.end(), '+') == 0;
+            });
+        auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
+            [index](const std::pair<size_t, std::string>& item)
+            {
+                return std::count(item.second.begin(), item.second.end(), '+') == index;
+            });
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        if (it_Ak_end != data_pair.begin())
+        {
+            // 生成一个在 [it_Ak_begin, it_Ak_end - 1] 范围内的随机下标
+            std::uniform_int_distribution<> distrib(it_Ak_begin - data_pair.begin(), it_Ak_end - data_pair.begin() - 1);
+            return distrib(gen);
+        }
+    }
+
+    virtual size_t convertIndex4Q(const std::vector<std::pair<size_t, std::string>>& data_pair, size_t index)
     {
         auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
             [index](const std::pair<size_t, std::string>& item)
@@ -242,12 +267,14 @@ public:
                 return std::count(item.second.begin(), item.second.end(), '+') == index;
             });
 
-        // 生成一个在 [it_Ak_begin, it_Ak_end - 1] 范围内的随机下标
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distrib(it_Ak_begin - data_pair.begin(), it_Ak_end - data_pair.begin() - 1);
-
-        return distrib(gen);
+        if (it_Ak_end != data_pair.begin())
+        {
+            // 生成一个在 [it_Ak_begin, it_Ak_end - 1] 范围内的随机下标
+            std::uniform_int_distribution<> distrib(it_Ak_begin - data_pair.begin(), it_Ak_end - data_pair.begin() - 1);
+            return distrib(gen);
+        }
     }
 protected: 
     size_t parseAdditionExpr(const std::string& str)
