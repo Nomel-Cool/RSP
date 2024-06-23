@@ -79,11 +79,7 @@ public:
             auto it = std::unique(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
             m_interactive_instances[i].erase(it, m_interactive_instances[i].end());
 
-            std::sort(m_interactive_instances[i].begin(), m_interactive_instances[i].end(), 
-                [](const auto& p1, const auto& p2) 
-                {
-                    return p1.first < p2.first;
-                });
+            sortByExprLen();
         }
     }
 
@@ -154,20 +150,12 @@ public:
         if (update_it_aj)
         {
             vj.emplace_back(std::make_pair(result4j, std::to_string(query_i) + "+" + answer_j));
-            std::sort(vj.begin(), vj.end(),
-                [](const auto& p1, const auto& p2)
-                {
-                    return p1.first < p2.first;
-                });
+            sortByExprLen();
         }
         if (update_it_ai)
         {
             vi.emplace_back(std::make_pair(result4i, std::to_string(query_j) + "+" + answer_i));
-            std::sort(vi.begin(), vi.end(),
-                [](const auto& p1, const auto& p2)
-                {
-                    return p1.first < p2.first;
-                });
+            sortByExprLen();
         }
     }
 
@@ -212,6 +200,32 @@ public:
 
         file.close(); // Close the file when done
     }
+
+    virtual void sortByExprLen()
+    {
+        for (auto& pair : m_interactive_instances)
+        {
+            std::sort(pair.second.begin(), pair.second.end(),
+                [](const auto& a,const auto& b)
+                {
+                    // 计算 "+" 的数量
+                    auto countPlus =
+                    [](const auto& str)
+                    {
+                        return std::count(str.begin(), str.end(), '+');
+                    };
+
+                    int countA = countPlus(a.second);
+                    int countB = countPlus(b.second);
+
+                    if (countA != countB)
+                        return countA < countB; // "+" 的数量不同，按数量排序
+                    else
+                        return a.first < b.first; // "+" 的数量相同，按第一分量排序
+                });
+        }
+    }
+
 protected: 
     size_t parseAdditionExpr(const std::string& str)
     {
