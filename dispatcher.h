@@ -122,53 +122,35 @@ public:
 		{
 			reality<N> r = env[i].getR();
 
+			/* u -> v */
 			for (size_t u = 0; u < N; ++u)
 			{
-				// 求取第u个交互元的前缀差值集
+				// 求取第u个交互元的层集
 				auto e = r.getDataPairs(u);
-				auto diffSets = calculateDifference(e);
+				auto layerSets4e = getLayerSets(e);
 
 				// 考量第v个交互元与第u个交互元交互时
 				for (size_t v = 0; v < N; ++v)
 				{
-					if (u == v)
-						continue;
+					if (u == v) continue;
 
+					// 求取第v个交互元的层集
 					auto w = r.getDataPairs(v);
+					auto layerSets4w = getLayerSets(w);
 
 					// 计算平衡度，首先放入压缩信息
 					double balance_degree = calculateBalanceDegree(w);
-					condense_rates[{v, u}].push_back(balance_degree);
+					condense_rates[{u, v}].push_back(balance_degree);
 
-					// 求取Ak与diffSets(k-1)的交集
-					for (size_t j = 1; j <= diffSets.size(); ++j)
-					{
-						auto it_Ak_begin = std::find_if(w.begin(), w.end(),
-							[j](const std::pair<size_t, std::string>& item)
-							{
-								return std::count(item.second.begin(), item.second.end(), '+') == j - 1;
-							});
+					// 计算e的缺损集
+					auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
-						auto it_Ak_end = std::find_if(w.begin(), w.end(),
-							[j](const std::pair<size_t, std::string>& item)
-							{
-								return std::count(item.second.begin(), item.second.end(), '+') == j;
-							});
+					// 计算e的缺损差值集
+					auto DiffLackSets4e = calculateLackDiffSets(LackSets4e , e);
 
-						std::set<size_t> Ak;
-						for (auto it = it_Ak_begin; it != it_Ak_end; ++it)
-							Ak.insert(it->first);
-
-						// 计算超验收缩率
-						double rate = calculateRates(Ak, diffSets[j - 1]);
-
-						// 记录到超验收缩率数组
-						condense_rates[{v,u}].push_back(rate);
-
-						// 如果这是最后一个Ak，则停止计算
-						if (it_Ak_end == w.end())
-							break;
-					}
+					// 计算认知收敛率
+					auto Rates = calculateRates(DiffLackSets4e, layerSets4w);
+					condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates.begin(), Rates.end());
 				}
 			}
 		}
@@ -220,44 +202,50 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<std::set<size_t> > calculateDifference(const std::vector<std::pair<size_t, std::string>>& e)
+	std::vector<double> calculateRates(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
 	{
-		std::vector<std::set<size_t>> result;
-		// 求取Ak所咋数组的结束时的下标，最多k不超过e.size()，因此作好提前阶段这个for循环的准备
-		for (size_t k = 0; k < e.size(); ++k)
+		std::vector<double> resultSets;
+
+		// 对diffLackSets[0]特殊处理
+		double rate4first = 0.0;
+		std::set<size_t> intersection;
+		std::set_intersection(diffLackSets[0].begin(), diffLackSets[0].end(), layerSets4w[0].begin(), layerSets4w[0].end(), std::inserter(intersection, intersection.begin()));
+		if (!layerSets4w[0].empty())
+			rate4first = static_cast<double>(intersection.size()) / layerSets4w[0].size();
+		resultSets.push_back(rate4first);
+
+		for (size_t i = 1; i < std::min(diffLackSets.size(), layerSets4w.size()); ++i)
 		{
-			auto it_k = std::find_if(e.begin(), e.end(),
-				[k](const std::pair<size_t, std::string > &item)
-				{
-					return std::count(item.second.begin(), item.second.end(), '+') == k;
-				});
-
-			//开始求取所有到达it_k以前的差值
-			std::set<size_t> diffSet;
-			for (auto it_i = e.begin(); it_i != it_k; ++it_i)
+			double rate = 0.0;
+			size_t times = 0;
+			for (size_t j = 0; j < i; ++j)
 			{
-				for (auto it_j = it_i; it_j != it_k; ++it_j) // 允许零元存在，这意味着直接解决问题
-				{
-					size_t diff = (it_j->first >= it_i->first) ? (it_j->first - it_i->first) : (it_i->first - it_j->first);
-					diffSet.insert(diff);
-				}
+				// Calculate the intersection of diffLackSets[i] and layerSets4w[j]
+				std::set<size_t> intersection;
+				std::set_intersection(diffLackSets[i].begin(), diffLackSets[i].end(), layerSets4w[j].begin(), layerSets4w[j].end(), std::inserter(intersection, intersection.begin()));
+
+				// Calculate the rate as | diffLackSets[i] ∩ layerSets4w[j]| / |layerSets4w[j] |
+				if (!layerSets4w[j].empty())
+					rate += static_cast<double>(intersection.size()) / layerSets4w[j].size();
 			}
-			result.push_back(diffSet);
-
-			// 如果这是最后一个Ak，则停止计算
-			if (it_k == e.end())
-				break;
+			resultSets.push_back(static_cast<double>(rate) / i);
 		}
-		return result;
-	}
 
-	double calculateRates(std::set<size_t> Ak, std::set<size_t> differSet)
-	{
-		// 计算Ak与differSet的交集intersection,并计算intersection的势与Ak的势的商并返回
-		std::vector<size_t> intersection;
-		std::set_intersection(Ak.begin(), Ak.end(), differSet.begin(), differSet.end(), std::back_inserter(intersection));
-		double rate = static_cast<double>(intersection.size()) / Ak.size();
-		return rate;
+		for (size_t j = std::min(diffLackSets.size(), layerSets4w.size()); j < diffLackSets.size(); ++j)
+		{
+			double rate = 0.0;
+			for (size_t k = 0; k < std::min(diffLackSets.size(), layerSets4w.size()); ++k)
+			{
+				std::set<size_t> intersection;
+				std::set_intersection(diffLackSets[j].begin(), diffLackSets[j].end(), layerSets4w[k].begin(), layerSets4w[k].end(), std::inserter(intersection, intersection.begin()));
+
+				// Calculate the rate as | diffLackSets[i] ∩ layerSets4w[j]| / |layerSets4w[j] |
+				if (!layerSets4w[k].empty())
+					rate += static_cast<double>(intersection.size()) / layerSets4w[k].size();
+			}
+			resultSets.push_back(static_cast<double>(rate) / j);
+		}
+		return resultSets;
 	}
 
 	double calculateBalanceDegree(const std::vector<std::pair<size_t, std::string>>& data_pair)
@@ -284,6 +272,73 @@ protected:
 				break;
 		}
 		return expectation;
+	}
+
+	std::vector<std::set<size_t>> getLayerSets(const std::vector<std::pair<size_t, std::string>>& e)
+	{
+		std::vector<std::set<size_t>> result_sets;
+		for (size_t j = 0; j < e.size(); ++j)
+		{
+			std::set<size_t> layers;
+			auto it_Ak_begin = std::find_if(e.begin(), e.end(),
+				[j](const std::pair<size_t, std::string>& item)
+				{
+					return std::count(item.second.begin(), item.second.end(), '+') == j;
+				});
+
+			auto it_Ak_end = std::find_if(e.begin(), e.end(),
+				[j](const std::pair<size_t, std::string>& item)
+				{
+					return std::count(item.second.begin(), item.second.end(), '+') == j + 1;
+				});
+
+			// 否则把[it_Ak_begin,it_Ak_end-1]之间的元素全部放入一个集合，并存储到result_sets中
+			for (auto it = it_Ak_begin; it != it_Ak_end; ++it)
+			{
+				layers.insert(it->first);
+			}
+			result_sets.push_back(layers);
+
+			if (it_Ak_end == e.end()) // 如果这是最后一个Ak，则停止计算
+				break;
+		}
+		return result_sets;
+	}
+
+	std::vector<std::set<size_t>> calculateLackSets(const std::vector<std::set<size_t>>& e, const std::vector<std::set<size_t>>& w)
+	{
+		std::vector<std::set<size_t>> resultSets;
+		for (size_t i = 0; i < std::min(e.size(), w.size()); ++i)
+		{
+			std::set<size_t> lacks;
+			/* lacks = {e[i] - e[i] ∩ w[i]} */
+			std::set<size_t> intersection;
+			std::set_intersection(e[i].begin(), e[i].end(), w[i].begin(), w[i].end(), std::inserter(intersection, intersection.begin()));
+			std::set_difference(e[i].begin(), e[i].end(), intersection.begin(), intersection.end(), std::inserter(lacks, lacks.begin()));
+			resultSets.push_back(lacks);
+		}
+		for (size_t j = std::min(e.size(), w.size()); j < e.size(); ++j)
+			resultSets.push_back(e[j]);
+		return resultSets;
+	}
+
+	std::vector<std::set<size_t>> calculateLackDiffSets(const std::vector<std::set<size_t>>& lack_e, const std::vector<std::pair<size_t, std::string>>& e)
+	{
+		std::vector<std::set<size_t>> resultSets;
+		for (size_t i = 0; i < lack_e.size(); ++i)
+		{
+			std::set<size_t> diffLack;
+			for (auto& lack : lack_e[i])
+			{
+				for (auto& pair : e)
+				{
+					if(lack >= pair.first)
+						diffLack.insert(lack - pair.first);
+				}
+			}
+			resultSets.push_back(diffLack);
+		}
+		return resultSets;
 	}
 private:
 	std::vector<Node<N, max_value, max_size> > env;
