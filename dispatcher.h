@@ -332,7 +332,8 @@ protected:
 			{
 				for (auto& pair : e)
 				{
-					if(lack >= pair.first)
+					auto rank = std::count(pair.second.begin(), pair.second.end(), '+');
+					if(lack >= pair.first && rank <= i)
 						diffLack.insert(lack - pair.first);
 				}
 			}
