@@ -141,25 +141,17 @@ protected:
 	}
 
 	// 惩罚函数
-	bool penalty(size_t i, size_t j, std::vector<double> list_a, std::vector<double> list_b)
+	bool penalty(size_t i, size_t j)
 	{
-		// 处理异常样本，如果样本点的所有元素都是0，返回负无穷大
-		if (std::all_of(list_a.begin(), list_a.end(), [](double i) { return i == 0.0; }) &&
-			std::all_of(list_b.begin(), list_b.end(), [](double i) { return i == 0.0; }))
+		// 如果_i, _j已经被选择了3次或更多次，返回true
+		if (m_penalty_data[{i, j}] >= 3)
+			return true;
+		// 否则，增加_i, _j的选择次数并返回false
+		else
 		{
-			if (m_penalty_data.find({ i,j }) != m_penalty_data.end())
-				if (++m_penalty_data[{i, j}] > 5 || ++m_penalty_data[{j, i}])
-					return true;
-				else
-					return false;
-			else
-			{
-				m_penalty_data[{i, j}] = 0;
-				m_penalty_data[{j, i}] = 0;
-				return false;
-			}
+			++m_penalty_data[{i, j}];
+			return false;
 		}
-		return false;
 	}
 
 	void executePenalty(size_t& _i, size_t& _j)
@@ -194,7 +186,7 @@ protected:
 		size_t _j = maxCovPair.first.second;
 
 		// 重复选择多次，添加惩罚，转嫁到随机上
-		bool isPenal = penalty(_i, _j, accuracy_datas[{_i, _j}], accuracy_datas[{_j, _i}]);
+		bool isPenal = penalty(_i, _j);
 		if (isPenal)
 			executePenalty(_i, _j);
 
