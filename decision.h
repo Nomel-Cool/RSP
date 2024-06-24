@@ -107,32 +107,29 @@ protected:
 		return sum / (X.size() - 1);
 	}
 
-	size_t closestToExpectation(const std::vector<double>& vec)
+	std::pair<size_t, size_t> closestToExpectation(const std::vector<double>& vec1, const std::vector<double>& vec2)
 	{
-		if (vec.size() < 2)
-		{
-			throw std::invalid_argument("The input vector must have at least two elements.");
-		}
+		// 扩展较短的向量以匹配较长的向量的长度
+		std::vector<double> v1 = vec1;
+		std::vector<double> v2 = vec2;
+		if (v1.size() < v2.size())
+			v1.resize(v2.size(), 0.0);
+		else if (v2.size() < v1.size())
+			v2.resize(v1.size(), 0.0);
 
-		// 找出除第一个元素外的最大值
-		double max_value = *std::max_element(vec.begin() + 1, vec.end());
+		// 计算两个向量之间的对应和
+		std::vector<double> diff(v1.size());
+		for (size_t i = 1; i < v1.size(); ++i)
+			diff[i] = v1[i] + v2[i];
 
-		// 创建一个包含所有最大值索引的向量
-		std::vector<size_t> candidates;
-		for (size_t i = 1; i < vec.size(); ++i)
-		{
-			if (vec[i] == max_value)
-			{
-				candidates.push_back(i);
-			}
-		}
+		// 找到最大的元素的下标
+		size_t maxIndex = std::distance(diff.begin(), std::max_element(diff.begin(), diff.end()));
 
-		// 从候选索引中随机选择一个
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_int_distribution<> distrib(0, candidates.size() - 1);
-
-		return candidates[distrib(gen)];
+		// 返回下标 + 1
+		return std::make_pair(
+			maxIndex < vec1.size() ? maxIndex : 1,
+			maxIndex < vec2.size() ? maxIndex : 1
+		);
 	}
 
 	// 平衡度计算公式
@@ -202,8 +199,7 @@ protected:
 			executePenalty(_i, _j);
 
 		// 挑选最大超验收敛率的组
-		size_t index4i = closestToExpectation(accuracy_datas[{_i, _j}]);
-		size_t index4j = closestToExpectation(accuracy_datas[{_j, _i}]);
+		auto index_both = closestToExpectation(accuracy_datas[{_i, _j}], accuracy_datas[{_j, _i}]);
 
 		// 读取文件当前的最后一行获取上一行的序号
 		std::ifstream inFile("interaction_orders.csv");
@@ -219,7 +215,7 @@ protected:
 			}
 		inFile.close();
 
-		return std::make_tuple(t + 1, _i, _j, index4i, index4j);
+		return std::make_tuple(t + 1, _i, _j, index_both.first, index_both.second);
 	}
 private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
