@@ -142,7 +142,9 @@ public:
             auto dis4j = std::distance(vj.begin(), it_qj);
             auto it_ai = vi.begin() + dis4i;
             auto it_aj = vj.begin() + dis4j;
-            it_ai->second = it_ai->second.size() < it_aj->second.size() ? it_ai->second : it_aj->second;
+            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '+');
+            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '+');
+            it_ai->second = rank_i < rank_j ? it_ai->second : it_aj->second;
         }
         if (storage_it_qj != vj.end())
         {
@@ -150,7 +152,9 @@ public:
             auto dis4i = std::distance(vi.begin(), it_qi);
             auto it_aj = vj.begin() + dis4j;
             auto it_ai = vi.begin() + dis4i;
-            it_aj->second = it_aj->second.size() < it_ai->second.size() ? it_aj->second : it_ai->second;
+            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '+');
+            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '+');
+            it_aj->second = rank_j < rank_i ? it_aj->second : it_ai->second;
         }
         if (update_it_aj)
         {
