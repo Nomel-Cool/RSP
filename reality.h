@@ -93,15 +93,15 @@ public:
     /// </summary>
     /// <param name="i"></param>
     /// <param name="j"></param>
-    virtual void interaction(size_t i, size_t j, size_t index_i, size_t index_j)
+    virtual void interaction(size_t i, size_t j, size_t _query_i, size_t _answer_i, size_t _query_j, size_t _answer_j)
     {
         auto& vi = m_interactive_instances[i];
         auto& vj = m_interactive_instances[j];
 
-        size_t converted_index_qi = convertIndex4Q(vi, index_i);
-        size_t converted_index_qj = convertIndex4Q(vj, index_j);
-        size_t converted_index_ai = convertIndex4A(vi, index_i);
-        size_t converted_index_aj = convertIndex4A(vj, index_j);
+        size_t converted_index_qi = convertIndex4Q(vi, _query_i);
+        size_t converted_index_qj = convertIndex4Q(vj, _query_j);
+        size_t converted_index_ai = convertIndex4A(vi, _answer_i);
+        size_t converted_index_aj = convertIndex4A(vj, _answer_j);
 
         size_t query_i = vi[converted_index_qi].first;
         std::string answer_i = vi[converted_index_ai].second;
@@ -247,7 +247,8 @@ public:
             {
                 return std::count(item.second.begin(), item.second.end(), '+') == index;
             });
-
+        if (it_Ak_begin == data_pair.end())
+            return convertIndex4A(data_pair, index - 1);
         std::random_device rd;
         std::mt19937 gen(rd());
         if (it_Ak_end != data_pair.begin())
@@ -270,7 +271,8 @@ public:
             {
                 return std::count(item.second.begin(), item.second.end(), '+') == index;
             });
-
+        if (it_Ak_begin == data_pair.end())
+            return convertIndex4Q(data_pair, index - 1);
         std::random_device rd;
         std::mt19937 gen(rd());
         if (it_Ak_end != data_pair.begin())
