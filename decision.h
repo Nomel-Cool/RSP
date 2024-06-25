@@ -48,7 +48,9 @@ public:
 
 		AnswerData answer_data = readFile4AnswerData("interaction_answer.csv");
 
-		return processingarguments(accuracy_data, answer_data);
+		auto result = processingarguments(accuracy_data, answer_data);
+		
+		return result;
 	}
 
 	virtual void makeOrders(SizeT7 arguments)
@@ -180,28 +182,17 @@ protected:
 		return data;
 	}
 
-	size_t closestToExpectation(const std::vector<double>& vec1, const std::vector<double>& vec2)
+	std::pair<size_t, size_t> closestToExpectation(const std::vector<double>& vec1, const std::vector<double>& vec2)
 	{
-		// 扩展较短的向量以匹配较长的向量的长度
-		std::vector<double> v1 = vec1;
-		std::vector<double> v2 = vec2;
-		if (v1.size() < v2.size())
-			v1.resize(v2.size(), 0.0);
-		else if (v2.size() < v1.size())
-			v2.resize(v1.size(), 0.0);
+		if (vec1.size() < 2 || vec2.size() < 2)
+			throw std::invalid_argument("Vectors must have at least two elements.");
 
-		// 计算两个向量之间的对应和
-		std::vector<double> diff(v1.size());
-		for (size_t i = 1; i < v1.size(); ++i)
-			diff[i] = v1[i] + v2[i];
+		size_t maxIndex1 = std::distance(vec1.begin(), std::max_element(vec1.begin() + 1, vec1.end()));
+		size_t maxIndex2 = std::distance(vec2.begin(), std::max_element(vec2.begin() + 1, vec2.end()));
 
-		// 找到最大的元素的下标
-		size_t maxIndex = std::distance(diff.begin(), std::max_element(diff.begin(), diff.end()));
-
-		// 返回下标
-		return maxIndex;
+		return { maxIndex1, maxIndex2 };
 	}
-
+	
 	// 平衡度计算公式
 	double balanceDegree(std::vector<double> list_a, std::vector<double> list_b)
 	{
@@ -234,7 +225,7 @@ protected:
 			_j = (_i + 1) % max_size;
 	}
 
-	SizeT3 processAccuracy(const AccuracyData& accuracy_datas)
+	SizeT4 processAccuracy(const AccuracyData& accuracy_datas)
 	{
 		BalanceData balanceData;
 		for (const auto& _pair : accuracy_datas)
@@ -248,11 +239,11 @@ protected:
 		}
 
 		// 找出新计算方式下的最大值
-		auto maxCovPair = *std::max_element(balanceData.begin(), balanceData.end(),
+		auto maxUnBalancedPair = *std::max_element(balanceData.begin(), balanceData.end(),
 			[](const auto& p1, const auto& p2) { return p1.second < p2.second; });
 
-		size_t _i = maxCovPair.first.first;
-		size_t _j = maxCovPair.first.second;
+		size_t _i = maxUnBalancedPair.first.first;
+		size_t _j = maxUnBalancedPair.first.second;
 
 		// 重复选择多次，添加惩罚，转嫁到随机上
 		bool isPenal = penalty(_i, _j);
@@ -262,65 +253,48 @@ protected:
 		// 挑选最大超验收敛率的组
 		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
 
-		return std::make_tuple(_i, _j, index_query);
+		return std::make_tuple(_i, _j, index_query.first, index_query.second);
 	}
 
-	SizeT2 processAnswer(SizeT3 query_info, const AnswerData& answer_datas)
+	SizeT2 processAnswer(SizeT4 query_info, const AnswerData& answer_datas)
 	{
-		size_t _i = std::get<0>(query_info), _j = std::get<1>(query_info), query_indice = std::get<2>(query_info);
-		auto answer_data = answer_datas.at({ _i, _j });
-		size_t max_value = 1;
-		double max_rate = -1.0;
+		size_t _i = std::get<0>(query_info), _j = std::get<1>(query_info), query_indice_i = std::get<2>(query_info), query_indice_j = std::get<3>(query_info);
+		
+		// 寻找_i寻问时，对应的应答元
+		auto answer_data_i_to_j = answer_datas.at({ _i, _j });
+		size_t max_value_i = 1;
+		double max_rate_i = -1.0;
 
-		for (const auto& item : answer_data)
-		{
-			if (item.first.first == query_indice)
-			{
+		for (const auto& item : answer_data_i_to_j)
+			if (item.first.first == query_indice_i)
 				for (const auto& rate : item.second)
-				{
-					if (rate > max_rate)
+					if (rate > max_rate_i)
 					{
-						max_rate = rate;
-						max_value = item.first.second;
+						max_rate_i = rate;
+						max_value_i = item.first.second;
 					}
-				}
-			}
-		}
 
-		if (max_value > 10)
-		{
-			int i = 9;
-		}
+		// 寻找_j寻问时，对应的应答元
+		auto answer_dataj_to_i = answer_datas.at({ _j, _i });
+		size_t max_value_j = 1;
+		double max_rate_j = -1.0;
 
-		auto _answer_data = answer_datas.at({ _j, _i });
-		size_t _max_value = 1;
-		double _max_rate = -1.0;
-
-		for (const auto& item : _answer_data)
-		{
-			if (item.first.first == query_indice)
-			{
+		for (const auto& item : answer_dataj_to_i)
+			if (item.first.first == query_indice_j)
 				for (const auto& rate : item.second)
-				{
-					if (rate > _max_rate)
+					if (rate > max_rate_j)
 					{
-						_max_rate = rate;
-						_max_value = item.first.second;
+						max_rate_j = rate;
+						max_value_j = item.first.second;
 					}
-				}
-			}
-		}
-		if (_max_value > 10)
-		{
-			int i = 9;
-		}
-		return std::make_tuple(max_value, _max_value);
+
+		return std::make_tuple(max_value_i, max_value_j);
 	}
 
 	// 生成交互序列
 	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas)
 	{
-		SizeT3 query_info = processAccuracy(accuracy_datas);
+		SizeT4 query_info = processAccuracy(accuracy_datas);
 
 		SizeT2 answer_info = processAnswer(query_info, answer_datas);
 
@@ -338,9 +312,10 @@ protected:
 			}
 		inFile.close();
 
-		auto result = std::make_tuple(t + 1, std::get<0>(query_info), std::get<1>(query_info), 
+		auto result = std::make_tuple(t + 1, 
+			std::get<0>(query_info), std::get<1>(query_info), 
 			std::get<2>(query_info), std::get<0>(answer_info), 
-			std::get<2>(query_info), std::get<1>(answer_info));
+			std::get<3>(query_info), std::get<1>(answer_info));
  		return result;
 	}
 private:
