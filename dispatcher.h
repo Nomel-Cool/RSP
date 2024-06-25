@@ -11,7 +11,7 @@
 #include <string>
 
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double >>;
-
+using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
 /*概要设计
 成员变量：
 reality,virtuality各一个对象
@@ -35,10 +35,10 @@ public:
 		groupId = groupId;
 		binded = binded;
 	}
-	void set(size_t i, size_t j, size_t index_i, size_t index_j)
+	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j)
 	{
 		//v.interaction(i, j);
-		r.interaction(i, j, index_i, index_j);
+		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
 	}
 	void show()
 	{
@@ -98,20 +98,24 @@ public:
 		{
 			line = lines.back();
 			std::istringstream iss(line);
-			std::string order, node_id, item_i, item_j, e_i, e_j;
+			std::string order, node_id, item_i, item_j, q_i, a_i, q_j, a_j;
 			std::getline(iss, order, ',');
 			std::getline(iss, node_id, ',');
 			std::getline(iss, item_i, ',');
 			std::getline(iss, item_j, ',');
-			std::getline(iss, e_i, ',');
-			std::getline(iss, e_j, ',');
+			std::getline(iss, q_i, ',');
+			std::getline(iss, a_i, ',');
+			std::getline(iss, q_j, ',');
+			std::getline(iss, a_j, ',');
 			int nodeId = std::stoi(node_id);
 			size_t i = std::stoul(item_i);
 			size_t j = std::stoul(item_j);
-			size_t index_i = std::stoul(e_i);
-			size_t index_j = std::stoul(e_j);
+			size_t query_i = std::stoul(q_i);
+			size_t answer_i = std::stoul(a_i);
+			size_t query_j = std::stoul(q_j);
+			size_t answer_j = std::stoul(a_j);
 			if (nodeId >= 0 && nodeId < env.size())
-				env[nodeId].set(i, j, index_i, index_j);
+				env[nodeId].set(i, j, query_i, answer_i, query_j, answer_j);
 		}
 	}
 	void statisticConvergence()
@@ -145,20 +149,59 @@ public:
 					// 计算e的缺损集
 					auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
-					// 计算e的缺损差值集
-					auto DiffLackSets4e = calculateLackDiffSets(LackSets4e , e);
+					// 计算e的缺损差值集给寻问元，计算w的缺损差值集给应当元
+					auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
 
 					// 计算认知收敛率
-					auto Rates = calculateRates(DiffLackSets4e, layerSets4w);
-					condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates.begin(), Rates.end());
+					auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
+					condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
 				}
 			}
 		}
 
 		writeToFile(condense_rates,"interaction_accuracy.csv");
 	}
+	void statisticAnswering()
+	{
+		AnswerData answer_rate;
+
+		for (size_t i = 0; i < env.size(); ++i)
+		{
+			reality<N> r = env[i].getR();
+
+			/* u -> v */
+			for (size_t u = 0; u < N; ++u)
+			{
+				// 求取第u个交互元的层集
+				auto e = r.getDataPairs(u);
+				auto layerSets4e = getLayerSets(e);
+
+				// 考量第v个交互元与第u个交互元交互时
+				for (size_t v = 0; v < N; ++v)
+				{
+					if (u == v) continue;
+
+					// 求取第v个交互元的层集
+					auto w = r.getDataPairs(v);
+					auto layerSets4w = getLayerSets(w);
+
+					// 计算e的缺损集
+					auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
+
+					// 计算w的缺损差值集给应当元
+					auto DiffLackSets4w = calculateLackDiffSets(LackSets4e, w);
+
+					// 计算认知收敛率
+					auto Rates4w = calculateRates4Answer(DiffLackSets4w, layerSets4w);
+					answer_rate[{u, v}] = Rates4w;
+				}
+			}
+		}
+
+		writeToFile(answer_rate, "interaction_answer.csv");
+	}
 protected:
-	void writeToFile(AccuracyData& data, const std::string& filename)
+	void writeToFile(const AccuracyData& data, const std::string& filename)
 	{
 		std::ofstream outFile(filename);
 
@@ -202,9 +245,31 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<double> calculateRates(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	void writeToFile(const AnswerData& data, const std::string& filename)
 	{
-		std::vector<double> resultSets;
+		std::ofstream outFile(filename);
+
+		for (const auto& entry : data)
+		{
+			const auto& indices = entry.first;
+			outFile << indices.first << "," << indices.second;
+			for (const auto& entity : entry.second)
+			{
+				const auto& interact_indices = entity.first;
+				outFile << '\n' << interact_indices.first << "," << interact_indices.second;
+
+				const auto& rates = entity.second;
+				for (const auto& rate : rates)
+					outFile << "," << rate;
+			}
+			outFile << '\n';
+		}
+		outFile.close();
+	}
+
+	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	{
+		std::vector<double> resultSet;
 
 		// 对diffLackSets[0]特殊处理
 		double rate4first = 0.0;
@@ -212,7 +277,7 @@ protected:
 		std::set_intersection(diffLackSets[0].begin(), diffLackSets[0].end(), layerSets4w[0].begin(), layerSets4w[0].end(), std::inserter(intersection, intersection.begin()));
 		if (!layerSets4w[0].empty())
 			rate4first = static_cast<double>(intersection.size()) / layerSets4w[0].size();
-		resultSets.push_back(rate4first);
+		resultSet.push_back(rate4first);
 
 		for (size_t i = 1; i < std::min(diffLackSets.size(), layerSets4w.size()); ++i)
 		{
@@ -228,7 +293,7 @@ protected:
 				if (!layerSets4w[j].empty())
 					rate += static_cast<double>(intersection.size()) / layerSets4w[j].size();
 			}
-			resultSets.push_back(static_cast<double>(rate) / i);
+			resultSet.push_back(static_cast<double>(rate) / i);
 		}
 
 		for (size_t j = std::min(diffLackSets.size(), layerSets4w.size()); j < diffLackSets.size(); ++j)
@@ -243,9 +308,56 @@ protected:
 				if (!layerSets4w[k].empty())
 					rate += static_cast<double>(intersection.size()) / layerSets4w[k].size();
 			}
-			resultSets.push_back(static_cast<double>(rate) / j);
+			resultSet.push_back(static_cast<double>(rate) / j);
 		}
-		return resultSets;
+		return resultSet;
+	}
+
+	std::map<std::pair<size_t, size_t>, std::vector<double>> calculateRates4Answer(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	{
+		std::map<std::pair<size_t, size_t>, std::vector<double>> resultSet;
+
+		// 对diffLackSets[0]特殊处理
+		double rate4first = 0.0;
+		std::set<size_t> intersection;
+		std::set_intersection(diffLackSets[0].begin(), diffLackSets[0].end(), layerSets4w[0].begin(), layerSets4w[0].end(), std::inserter(intersection, intersection.begin()));
+		if (!layerSets4w[0].empty())
+		{
+			rate4first = static_cast<double>(intersection.size()) / layerSets4w[0].size();
+			resultSet[{1, 1}].push_back(rate4first);
+		}
+
+		for (size_t i = 1; i < std::min(diffLackSets.size(), layerSets4w.size()); ++i)
+		{
+			for (size_t j = 0; j < i; ++j)
+			{
+				double rate = 0.0;
+				std::set<size_t> intersection;
+				std::set_intersection(diffLackSets[i].begin(), diffLackSets[i].end(), layerSets4w[j].begin(), layerSets4w[j].end(), std::inserter(intersection, intersection.begin()));
+				if (!layerSets4w[j].empty())
+				{
+					rate = static_cast<double>(intersection.size()) / layerSets4w[j].size();
+					resultSet[{i + 1, j + 1}].push_back(rate);
+				}
+			}
+		}
+
+		for (size_t k = std::min(diffLackSets.size(), layerSets4w.size()); k < diffLackSets.size(); ++k)
+		{
+			for (size_t l = 0; l < layerSets4w.size(); ++l)
+			{
+				double rate = 0.0;
+				std::set<size_t> intersection;
+				std::set_intersection(diffLackSets[k].begin(), diffLackSets[k].end(), layerSets4w[l].begin(), layerSets4w[l].end(), std::inserter(intersection, intersection.begin()));
+				if (!layerSets4w[l].empty())
+				{
+					rate = static_cast<double>(intersection.size()) / layerSets4w[l].size();
+					resultSet[{k + 1, l + 1}].push_back(rate);
+				}
+			}
+		}
+
+		return resultSet;
 	}
 
 	double calculateBalanceDegree(const std::vector<std::pair<size_t, std::string>>& data_pair)
