@@ -247,8 +247,6 @@ public:
             {
                 return std::count(item.second.begin(), item.second.end(), '+') == index;
             });
-        if (it_Ak_begin == data_pair.end())
-            return convertIndex4A(data_pair, index - 1);
         std::random_device rd;
         std::mt19937 gen(rd());
         if (it_Ak_end != data_pair.begin())
@@ -271,8 +269,6 @@ public:
             {
                 return std::count(item.second.begin(), item.second.end(), '+') == index;
             });
-        if (it_Ak_begin == data_pair.end())
-            return convertIndex4Q(data_pair, index - 1);
         std::random_device rd;
         std::mt19937 gen(rd());
         if (it_Ak_end != data_pair.begin())
