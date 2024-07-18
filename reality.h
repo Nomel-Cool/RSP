@@ -143,7 +143,10 @@ public:
             auto it_aj = vj.begin() + dis4j;
             auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '*');
             auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '*');
-            it_ai->second = rank_i < rank_j ? it_ai->second : it_aj->second;
+            if (rank_i < rank_j || (rank_i == rank_j && isSmaller(it_ai->second, it_aj->second)))
+            {
+                it_ai->second = it_aj->second;
+            }
         }
         if (storage_it_qj != vj.end())
         {
@@ -153,7 +156,11 @@ public:
             auto it_ai = vi.begin() + dis4i;
             auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '*');
             auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '*');
-            it_aj->second = rank_j < rank_i ? it_aj->second : it_ai->second;
+            // 認爲 5*10 會比 10*5更優
+            if (rank_j < rank_i || (rank_i == rank_j && isSmaller(it_aj->second, it_ai->second)))
+            {
+                it_aj->second = it_ai->second;
+            }
         }
         if (update_it_aj)
         {
@@ -287,6 +294,27 @@ protected:
             sum *= std::stoul(part);
         return sum;
     }
+    bool isSmaller(const std::string& expr1, const std::string& expr2)
+    {
+        std::vector<size_t> nums1 = getSortedNumbers(expr1);
+        std::vector<size_t> nums2 = getSortedNumbers(expr2);
+        return nums1 < nums2;
+    }
+    std::vector<size_t> getSortedNumbers(const std::string& expr)
+    {
+        std::vector<size_t> nums;
+        std::stringstream ss(expr);
+        size_t num;
+        while (ss >> num)
+        {
+            nums.push_back(num);
+            if (ss.peek() == '*')
+                ss.ignore();
+        }
+        std::sort(nums.begin(), nums.end());
+        return nums;
+    }
+
 private:
     // <交互元ID,{<QBag_i,ABag_i>}>
     std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_instances;
