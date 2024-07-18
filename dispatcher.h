@@ -446,7 +446,7 @@ protected:
 				{
 					auto rank = std::count(pair.second.begin(), pair.second.end(), '*');
 					if(lack >= pair.first && rank <= i)
-						diffLack.insert(static_cast<float>(lack / pair.first));
+						diffLack.insert(static_cast<float>(lack) / pair.first);
 				}
 			}
 			resultSets.push_back(diffLack);
