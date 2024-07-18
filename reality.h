@@ -53,6 +53,8 @@ public:
         std::default_random_engine generator;
         std::uniform_int_distribution<size_t> distribution(1, max_value);
 
+        std::vector<size_t> primes = sieve(max_value);
+
         for (size_t i = 0; i < N; ++i)
         {
             auto rand_size = (rand() % max_size); // Not Empty Set
@@ -63,7 +65,8 @@ public:
 
             for (size_t j = 0; j < rand_size; ++j)
             {
-                size_t rand_value = distribution(generator);
+                size_t rand_index = distribution(generator) % primes.size();
+                size_t rand_value = primes[rand_index];
                 m_interactive_instances[i].emplace_back(std::make_pair(rand_value, std::to_string(rand_value)));
             }
 
@@ -241,6 +244,54 @@ public:
         }
     }
 
+    std::vector<size_t> sieve(size_t max_value)
+    {
+        std::vector<bool> is_prime(max_value + 1, true);
+        is_prime[0] = is_prime[1] = false;
+        for (size_t i = 2; i * i <= max_value; ++i)
+        {
+            if (is_prime[i])
+            {
+                for (size_t j = i * i; j <= max_value; j += i)
+                {
+                    is_prime[j] = false;
+                }
+            }
+        }
+
+        std::vector<size_t> primes;
+        for (size_t i = 2; i <= max_value; ++i)
+        {
+            if (is_prime[i])
+            {
+                primes.push_back(i);
+            }
+        }
+        return primes;
+    }
+
+    bool isSmaller(const std::string& expr1, const std::string& expr2)
+    {
+        std::vector<size_t> nums1 = getSortedNumbers(expr1);
+        std::vector<size_t> nums2 = getSortedNumbers(expr2);
+        return nums1 < nums2;
+    }
+
+    std::vector<size_t> getSortedNumbers(const std::string& expr)
+    {
+        std::vector<size_t> nums;
+        std::stringstream ss(expr);
+        size_t num;
+        while (ss >> num)
+        {
+            nums.push_back(num);
+            if (ss.peek() == '*')
+                ss.ignore();
+        }
+        std::sort(nums.begin(), nums.end());
+        return nums;
+    }
+
     virtual size_t convertIndex4A(const std::vector<std::pair<size_t, std::string>>& data_pair, size_t index)
     {
         auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
@@ -294,27 +345,6 @@ protected:
             sum *= std::stoul(part);
         return sum;
     }
-    bool isSmaller(const std::string& expr1, const std::string& expr2)
-    {
-        std::vector<size_t> nums1 = getSortedNumbers(expr1);
-        std::vector<size_t> nums2 = getSortedNumbers(expr2);
-        return nums1 < nums2;
-    }
-    std::vector<size_t> getSortedNumbers(const std::string& expr)
-    {
-        std::vector<size_t> nums;
-        std::stringstream ss(expr);
-        size_t num;
-        while (ss >> num)
-        {
-            nums.push_back(num);
-            if (ss.peek() == '*')
-                ss.ignore();
-        }
-        std::sort(nums.begin(), nums.end());
-        return nums;
-    }
-
 private:
     // <½»»¥ÔªID,{<QBag_i,ABag_i>}>
     std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_instances;
