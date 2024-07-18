@@ -267,7 +267,7 @@ protected:
 		outFile.close();
 	}
 
-	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	std::vector<double> calculateRates4Query(const std::vector<std::set<float>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
 	{
 		std::vector<double> resultSet;
 
@@ -313,7 +313,7 @@ protected:
 		return resultSet;
 	}
 
-	std::map<std::pair<size_t, size_t>, std::vector<double>> calculateRates4Answer(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	std::map<std::pair<size_t, size_t>, std::vector<double>> calculateRates4Answer(const std::vector<std::set<float>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
 	{
 		std::map<std::pair<size_t, size_t>, std::vector<double>> resultSet;
 
@@ -368,13 +368,13 @@ protected:
 			auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
 				[j](const std::pair<size_t, std::string>& item)
 				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j - 1;
+					return std::count(item.second.begin(), item.second.end(), '*') == j - 1;
 				});
 
 			auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
 				[j](const std::pair<size_t, std::string>& item)
 				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j;
+					return std::count(item.second.begin(), item.second.end(), '*') == j;
 				});
 			size_t amount_ak = std::distance(it_Ak_begin, it_Ak_end);
 			expectation += (static_cast<double>(j) * static_cast<double>(amount_ak) / static_cast<double>(data_pair.size()));
@@ -395,13 +395,13 @@ protected:
 			auto it_Ak_begin = std::find_if(e.begin(), e.end(),
 				[j](const std::pair<size_t, std::string>& item)
 				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j;
+					return std::count(item.second.begin(), item.second.end(), '*') == j;
 				});
 
 			auto it_Ak_end = std::find_if(e.begin(), e.end(),
 				[j](const std::pair<size_t, std::string>& item)
 				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j + 1;
+					return std::count(item.second.begin(), item.second.end(), '*') == j + 1;
 				});
 
 			// 否则把[it_Ak_begin,it_Ak_end-1]之间的元素全部放入一个集合，并存储到result_sets中
@@ -434,19 +434,19 @@ protected:
 		return resultSets;
 	}
 
-	std::vector<std::set<size_t>> calculateLackDiffSets(const std::vector<std::set<size_t>>& lack_e, const std::vector<std::pair<size_t, std::string>>& e)
+	std::vector<std::set<float>> calculateLackDiffSets(const std::vector<std::set<size_t>>& lack_e, const std::vector<std::pair<size_t, std::string>>& e)
 	{
-		std::vector<std::set<size_t>> resultSets;
+		std::vector<std::set<float>> resultSets;
 		for (size_t i = 0; i < lack_e.size(); ++i)
 		{
-			std::set<size_t> diffLack;
+			std::set<float> diffLack;
 			for (auto& lack : lack_e[i])
 			{
 				for (auto& pair : e)
 				{
-					auto rank = std::count(pair.second.begin(), pair.second.end(), '+');
+					auto rank = std::count(pair.second.begin(), pair.second.end(), '*');
 					if(lack >= pair.first && rank <= i)
-						diffLack.insert(lack - pair.first);
+						diffLack.insert(static_cast<float>(lack / pair.first));
 				}
 			}
 			resultSets.push_back(diffLack);
