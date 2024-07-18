@@ -112,7 +112,7 @@ public:
         bool update_it_aj = false, update_it_ai = false;
 
         /* vi -> vj */
-        size_t result4j = query_i + parseAdditionExpr(answer_j);
+        size_t result4j = query_i * parseMultiplicationExpr(answer_j);
         auto it_qj = std::find_if(vj.begin(), vj.end(), [result4j](const auto& p) { return p.first == result4j; });
         if (it_qj != vj.end()) // 命中，应该查询qi，是否也有同样的问题
         {
@@ -124,7 +124,7 @@ public:
             update_it_aj = true;
 
         /* vj -> vi */
-        size_t result4i = query_j + parseAdditionExpr(answer_i);
+        size_t result4i = query_j * parseMultiplicationExpr(answer_i);
         auto it_qi = std::find_if(vi.begin(), vi.end(), [result4i](const auto& p) { return p.first == result4i; });
         if (it_qi != vi.end()) // 命中，应该查询qj，是否也有同样的问题
         {
@@ -142,8 +142,8 @@ public:
             auto dis4j = std::distance(vj.begin(), it_qj);
             auto it_ai = vi.begin() + dis4i;
             auto it_aj = vj.begin() + dis4j;
-            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '+');
-            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '+');
+            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '*');
+            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '*');
             it_ai->second = rank_i < rank_j ? it_ai->second : it_aj->second;
         }
         if (storage_it_qj != vj.end())
@@ -152,18 +152,18 @@ public:
             auto dis4i = std::distance(vi.begin(), it_qi);
             auto it_aj = vj.begin() + dis4j;
             auto it_ai = vi.begin() + dis4i;
-            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '+');
-            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '+');
+            auto rank_i = std::count(it_ai->second.begin(), it_ai->second.end(), '*');
+            auto rank_j = std::count(it_aj->second.begin(), it_aj->second.end(), '*');
             it_aj->second = rank_j < rank_i ? it_aj->second : it_ai->second;
         }
         if (update_it_aj)
         {
-            vj.emplace_back(std::make_pair(result4j, std::to_string(query_i) + "+" + answer_j));
+            vj.emplace_back(std::make_pair(result4j, std::to_string(query_i) + "*" + answer_j));
             sortByExprLen();
         }
         if (update_it_ai)
         {
-            vi.emplace_back(std::make_pair(result4i, std::to_string(query_j) + "+" + answer_i));
+            vi.emplace_back(std::make_pair(result4i, std::to_string(query_j) + "*" + answer_i));
             sortByExprLen();
         }
     }
@@ -279,13 +279,13 @@ public:
         }
     }
 protected: 
-    size_t parseAdditionExpr(const std::string& str)
+    size_t parseMultiplicationExpr(const std::string& str)
     {
         size_t sum = 0;
         std::istringstream iss(str);
         std::string part;
-        while (std::getline(iss, part, '+'))
-            sum += std::stoul(part);
+        while (std::getline(iss, part, '*'))
+            sum *= std::stoul(part);
         return sum;
     }
 private:
