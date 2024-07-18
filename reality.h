@@ -216,20 +216,20 @@ public:
             std::sort(pair.second.begin(), pair.second.end(),
                 [](const auto& a,const auto& b)
                 {
-                    // 计算 "+" 的数量
+                    // 计算 "*" 的数量
                     auto countPlus =
                     [](const auto& str)
                     {
-                        return std::count(str.begin(), str.end(), '+');
+                        return std::count(str.begin(), str.end(), '*');
                     };
 
                     int countA = countPlus(a.second);
                     int countB = countPlus(b.second);
 
                     if (countA != countB)
-                        return countA < countB; // "+" 的数量不同，按数量排序
+                        return countA < countB; // "*" 的数量不同，按数量排序
                     else
-                        return a.first < b.first; // "+" 的数量相同，按第一分量排序
+                        return a.first < b.first; // "*" 的数量相同，按第一分量排序
                 });
         }
     }
@@ -239,12 +239,12 @@ public:
         auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
             [index](const std::pair<size_t, std::string>& item)
             {
-                return std::count(item.second.begin(), item.second.end(), '+') == 0;
+                return std::count(item.second.begin(), item.second.end(), '*') == 0;
             });
         auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
             [index](const std::pair<size_t, std::string>& item)
             {
-                return std::count(item.second.begin(), item.second.end(), '+') == index;
+                return std::count(item.second.begin(), item.second.end(), '*') == index;
             });
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -261,12 +261,12 @@ public:
         auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
             [index](const std::pair<size_t, std::string>& item)
             {
-                return std::count(item.second.begin(), item.second.end(), '+') == index - 1;
+                return std::count(item.second.begin(), item.second.end(), '*') == index - 1;
             });
         auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
             [index](const std::pair<size_t, std::string>& item)
             {
-                return std::count(item.second.begin(), item.second.end(), '+') == index;
+                return std::count(item.second.begin(), item.second.end(), '*') == index;
             });
         std::random_device rd;
         std::mt19937 gen(rd());
@@ -280,7 +280,7 @@ public:
 protected: 
     size_t parseMultiplicationExpr(const std::string& str)
     {
-        size_t sum = 0;
+        size_t sum = 1;
         std::istringstream iss(str);
         std::string part;
         while (std::getline(iss, part, '*'))
