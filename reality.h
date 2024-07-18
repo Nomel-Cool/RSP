@@ -51,7 +51,7 @@ public:
         std::srand(std::time(nullptr));
 
         std::default_random_engine generator;
-        std::uniform_int_distribution<size_t> distribution(0, max_value);
+        std::uniform_int_distribution<size_t> distribution(1, max_value);
 
         for (size_t i = 0; i < N; ++i)
         {
@@ -59,7 +59,7 @@ public:
             m_interactive_instances[i].resize(rand_size);
 
             m_interactive_instances[i].clear();
-            m_interactive_instances[i].reserve(rand_size + 2); // +2 for the two elements you're adding
+            m_interactive_instances[i].reserve(rand_size + 1); // +1 for the two elements you're adding
 
             for (size_t j = 0; j < rand_size; ++j)
             {
@@ -68,7 +68,6 @@ public:
             }
 
             // 使满足认知收敛的必要条件
-            m_interactive_instances[i].emplace_back(std::make_pair(0, "0"));
             m_interactive_instances[i].emplace_back(std::make_pair(1, "1"));
 
             // 一定要去重，不然后续很难利用集合计算Pfi
