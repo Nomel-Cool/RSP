@@ -116,7 +116,6 @@ public:
 		return points;
 	}
 
-
 protected:
 	virtual float matrix_like_summarize(const std::vector<float>& x, std::vector<float> y = std::vector<float>())
 	{
