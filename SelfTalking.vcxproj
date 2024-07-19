@@ -70,6 +70,9 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>F:\WorkPlace\VS\SelfTalking\the3rdLibraries\eigen-3.4.0;$(IncludePath)</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -137,6 +140,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="interaction_accuracy.csv" />
+    <None Include="interaction_answer.csv" />
     <None Include="interaction_orders.csv" />
     <None Include="interaction_output.csv" />
   </ItemGroup>

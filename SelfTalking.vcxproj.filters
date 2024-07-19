@@ -43,5 +43,6 @@
     <None Include="interaction_accuracy.csv">
       <Filter>资源文件</Filter>
     </None>
+    <None Include="interaction_answer.csv" />
   </ItemGroup>
 </Project>
