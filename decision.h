@@ -17,6 +17,7 @@
 
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
 using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
+using PositionRatioData = std::vector<float>;
 using BalanceData = std::map<std::pair<size_t, size_t>, double>;
 using SizeT2 = std::tuple<size_t, size_t>;
 using SizeT3 = std::tuple<size_t, size_t, size_t>;
@@ -46,12 +47,15 @@ public:
 
 	virtual SizeT7 gainFeedBack()
 	{
+		/* 【Begin】 ******** 处理reality相关反馈 *********/
 		AccuracyData accuracy_data = readFile4AccuracyData("interaction_accuracy.csv");
-
 		AnswerData answer_data = readFile4AnswerData("interaction_answer.csv");
-
 		auto result = processingarguments(accuracy_data, answer_data);
-		
+		/* 【Finish】 ******** 处理reality相关反馈 *********/
+
+		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
+		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
+		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
 		return result;
 	}
 
@@ -181,6 +185,22 @@ protected:
 
 		inFile.close();
 
+		return data;
+	}
+
+	PositionRatioData readFile4PositionRatioData(const std::string& filename)
+	{
+		std::ifstream inFile(filename);
+		PositionRatioData data;
+		std::string line;
+		while (std::getline(inFile, line))
+		{
+			std::stringstream ss(line);
+			float value;
+			ss >> value;
+			data.emplace_back(value);
+		}
+		inFile.close();
 		return data;
 	}
 
