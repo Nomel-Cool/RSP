@@ -200,6 +200,12 @@ public:
 
 		writeToFile(answer_rate, "interaction_answer.csv");
 	}
+	void statisticRatio()
+	{
+		virtuality<N> v = env[i].getV();
+		float ratio = v.getRatio();
+		writeToFile(ratio, "interaction_ratio.csv");
+	}
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
 	{
@@ -264,6 +270,14 @@ protected:
 			}
 			outFile << '\n';
 		}
+		outFile.close();
+	}
+
+	void writeToFile(const float ratio, const std::string& filename)
+	{
+		std::ofstream outFile(filename);
+		outFile << std::to_string(ratio);
+		outFile << '\n';
 		outFile.close();
 	}
 
