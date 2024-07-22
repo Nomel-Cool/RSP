@@ -380,9 +380,9 @@ protected:
 		float x2bar = matrix_like_summarize(x, x);
 		float ybar = matrix_like_summarize(y);
 		float xybar = matrix_like_summarize(x, y);
-		float determined = pow((n * x2bar - xbar * xbar), -1);
-		float a = determined * (n * xybar - xbar * ybar);
-		float b = determined * (x2bar * ybar - xbar * xybar);
+		float denominator = n * x2bar - xbar * xbar;
+		float a = (n * xybar - xbar * ybar) / denominator;
+		float b = (x2bar * ybar - xbar * xybar) / denominator;
 		return std::make_tuple(a, b);
 	}
 
