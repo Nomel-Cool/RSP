@@ -279,10 +279,11 @@ protected:
 	void writeToFile(const float ratio, const std::string& filename)
 	{
 		std::ofstream outFile(filename, std::ios::app); // 追加模式
-		outFile << std::to_string(ratio);
+		outFile << std::scientific << ratio;  // 使用科学计数法
 		outFile << '\n';
 		outFile.close();
 	}
+
 
 	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
 	{
