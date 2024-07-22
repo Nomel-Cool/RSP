@@ -15,7 +15,6 @@ int main()
 		 //统计交互参数，返回上层
 		dispatch.statisticConvergence();
 		dispatch.statisticAnswering();
-		dispatch.statisticRatio();
 
 		// 考察整体平衡度
 		auto feed_back = decise.gainFeedBack();
@@ -26,13 +25,17 @@ int main()
 		// 读取交互指令，实现交互
 		dispatch.interaction();
 
+		// 生成位置占比数据
+		dispatch.statisticRatio();
+
 		// 展示交互结果
 		dispatch.show(0);
 
 		 //手动迭代
-		system("pause");
+		//system("pause");
 
-		// Sleep(1000);
+		// 自动迭代
+		Sleep(1000);
  	}
 
 	//system("clean_csv_contents.bat");
