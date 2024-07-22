@@ -27,7 +27,7 @@ public:
 		m_interactive_elements.resize(N);
 		for (size_t i = 0; i < N; ++i)
 			m_interactive_elements.at(i) = std::to_string(i + 1);
-		m_interactor = std::make_tuple(0, 1, 2); // 这样初始化可以保证根节点也能纳入位置量的计算范畴
+		m_up_pos = std::make_tuple(0, 1);
 	}
 	~virtuality()
 	{
@@ -37,8 +37,8 @@ public:
 	{
 		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
 			throw;
-		size_t determined_position = getPosition(i + 1, j + 1);
-		size_t grass = (size_t)std::pow((N - 1) * N / 2, std::get<0>(m_interactor));
+		ULONG64 determined_position = getPosition(i + 1, j + 1);
+		ULONG64 grass = (ULONG64)std::pow((N - 1) * N / 2, std::get<0>(m_up_pos));
 		float positon_ratio = static_cast<float>(determined_position) / grass;
 		m_current_ratio = positon_ratio;
 	}
@@ -63,11 +63,10 @@ protected:
 	{
 		if (j < i)
 			std::swap(i, j);
-		size_t a = std::get<1>(m_interactor), b = std::get<2>(m_interactor);
-		size_t relative_position = (((2 * N - i) * (i - 1)) << 1) + j - i;
-		size_t determined_anchor = ((((2 * N - a) * (a - 1)) << 1) + b - a - 1) * ((N - 1) * N >> 1);
-		size_t determined_position = determined_anchor + relative_position;
-		m_interactor = std::make_tuple(std::get<0>(m_interactor) + 1, i, j);
+		size_t determined_anchor = std::get<1>(m_up_pos);
+		size_t relative_position = (((2 * N - i) * (i - 1)) >> 1) + j - i;
+		size_t determined_position = (determined_anchor - 1) * ((N * (N - 1)) >> 1) + relative_position;
+		m_up_pos = std::make_tuple(std::get<0>(m_up_pos) + 1, determined_position);
 		return determined_position;
 	}
 	size_t C(size_t n, size_t m)
@@ -82,8 +81,8 @@ private:
 	std::vector<std::string> m_interactive_elements;
 	std::stack<std::pair<size_t, size_t> > m_highlighting_elements;
 	std::stack<std::bitset<N> > m_coding_status;
-	std::tuple<size_t, size_t, size_t> m_interactor; // 存储当前形成序：<t,i,j> (j>i)
-	float m_current_ratio = 0.0;
+	std::tuple<size_t, ULONG64> m_up_pos; // 存储当前形成序的上分位置 <t,pos>
+	double m_current_ratio = 0.0;
 };
 
 #endif
