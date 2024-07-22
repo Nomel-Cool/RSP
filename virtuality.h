@@ -35,9 +35,9 @@ public:
 	}
 	virtual void interaction(size_t i, size_t j)
 	{
-		if (i > N || i <= 0 || j <= 0 || j > N)
+		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
 			throw;
-		size_t determined_position = getPosition(i, j);
+		size_t determined_position = getPosition(i + 1, j + 1);
 		size_t grass = (size_t)std::pow((N - 1) * N / 2, std::get<0>(m_interactor) - 1);
 		float positon_ratio = static_cast<float>(determined_position) / grass;
 		m_current_ratio = positon_ratio;
