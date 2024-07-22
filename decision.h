@@ -13,6 +13,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include <Eigen/Dense>
+
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
 using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
 using BalanceData = std::map<std::pair<size_t, size_t>, double>;
@@ -317,6 +319,51 @@ protected:
 			std::get<2>(query_info), std::get<0>(answer_info), 
 			std::get<3>(query_info), std::get<1>(answer_info));
  		return result;
+	}
+
+	std::tuple<float, float> calMin2(std::vector<float>& x, std::vector<float>& y)
+	{
+		size_t n = x.size();
+		if (n != y.size())
+			throw;
+		float xbar = matrix_like_summarize(x);
+		float x2bar = matrix_like_summarize(x, x);
+		float ybar = matrix_like_summarize(y);
+		float xybar = matrix_like_summarize(x, y);
+		float determined = pow((n * x2bar - xbar * xbar), -1);
+		float a = determined * (n * xybar - xbar * ybar);
+		float b = determined * (x2bar * ybar - xbar * xybar);
+		return std::make_tuple(a, b);
+	}
+
+	Eigen::Vector3f calMin3(size_t _t, std::vector<float>& x, std::vector<float>& y)
+	{
+		if (_t != x.size() || _t != y.size()) throw;
+
+		// 构造array_t
+		std::vector<float> t;
+		t.clear();
+		t.resize(_t);
+		for (size_t j = 1; j <= _t; ++j)
+			t.emplace_back(j);
+
+		/* 求取拟合直线的单位方向向量 */
+		Eigen::Matrix3f S = Eigen::Matrix3f::Zero(); // 初始化S为零矩阵
+
+		for (int i = 0; i < _t; i++)
+		{
+			Eigen::Vector3f Yi(x[i], y[i], t[i]); // 构造向量Yi
+			S += Yi * Yi.transpose() - Yi * Yi.transpose(); // 计算每一项并累加到S
+		}
+
+		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(S); // 创建一个用于求解特征值和特征向量的求解器
+		Eigen::Vector3f eigenvalues = solver.eigenvalues().real(); // 计算特征值
+		Eigen::Matrix3f eigenvectors = solver.eigenvectors(); // 计算特征向量
+
+		int minIndex;
+		float minValue = eigenvalues.minCoeff(&minIndex); // 找到最小特征值及其索引
+
+		return eigenvectors.col(minIndex); // 返回最小特征值对应的特征向量就是目标方向向量
 	}
 private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
