@@ -202,9 +202,12 @@ public:
 	}
 	void statisticRatio()
 	{
-		virtuality<N> v = env[i].getV();
-		float ratio = v.getRatio();
-		writeToFile(ratio, "interaction_ratio.csv");
+		for (size_t i = 0; i < env.size(); ++i)
+		{
+			virtuality<N> v = env[i].getV();
+			float ratio = v.getRatio();
+			writeToFile(ratio, "interaction_ratio.csv");
+		}
 	}
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
