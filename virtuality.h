@@ -36,11 +36,11 @@ public:
 	virtual void interaction(size_t i, size_t j)
 	{
 		if (i > N || i <= 0 || j <= 0 || j > N)
-			return false;
+			throw;
 		size_t determined_position = getPosition(i, j);
-		size_t grass = (size_t)pos((N - 1) * N / 2, std::get<0>(m_interactor) - 1);
+		size_t grass = (size_t)std::pow((N - 1) * N / 2, std::get<0>(m_interactor) - 1);
 		float positon_ratio = static_cast<float>(determined_position) / grass;
-		m_current_ratio = position_ratio;
+		m_current_ratio = positon_ratio;
 	}
 
 	virtual float getRatio()
@@ -67,38 +67,8 @@ protected:
 		size_t relative_position = (((2 * N - i) * (i - 1)) << 1) + j - i;
 		size_t determined_anchor = ((((2 * N - a) * (a - 1)) << 1) + b - a - 1) * ((N - 1) * N >> 1);
 		size_t determined_position = determined_anchor + relative_position;
-		m_interactor = std::make_tuple(std::getc<0>(m_interactor) + 1, i, j);
+		m_interactor = std::make_tuple(std::get<0>(m_interactor) + 1, i, j);
 		return determined_position;
-	}
-	virtual void encoding_bits()
-	{
-		std::bitset<N> code;
-		code.set(N - i), code.set(N - j); // µπ÷√¥Ê∑≈
-		code.flip();
-
-		m_coding_status.push(code);
-	}
-	virtual void encoding_string()
-	{
-		std::string si = m_interactive_elements.at(i - 1);
-		std::string sj = m_interactive_elements.at(j - 1);
-		m_interactive_elements.at(i - 1) = (sj + "(" + si + ")" + sj);
-		m_interactive_elements.at(j - 1) = (si + "(" + sj + ")" + si);
-
-		std::pair<size_t, size_t> highlighted_p = std::make_pair(i - 1, j - 1);
-		m_highlighting_elements.push(highlighted_p);
-	}
-	virtual float matrix_like_summarize(const std::vector<float>& x, std::vector<float> y = std::vector<float>())
-	{
-		/* just a projection: x * y' */
-		size_t n = x.size();
-		if (y.size() == 0 && n != 0)
-			y = std::vector<float>(n, 1);
-		if (n != y.size())
-			throw;
-		float sum = 0.0;
-		for (size_t i = 0; i < n; ++i)
-			sum += x[i] * y[i];
 	}
 	size_t C(size_t n, size_t m)
 	{
