@@ -278,7 +278,7 @@ protected:
 
 	void writeToFile(const float ratio, const std::string& filename)
 	{
-		std::ofstream outFile(filename);
+		std::ofstream outFile(filename, std::ios::app); // ×·¼ÓÄ£Ê½
 		outFile << std::to_string(ratio);
 		outFile << '\n';
 		outFile.close();
