@@ -37,8 +37,8 @@ public:
 	{
 		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
 			throw;
-		ULONG64 determined_position = getPosition(i + 1, j + 1);
-		ULONG64 grass = (ULONG64)std::pow((N - 1) * N / 2, std::get<0>(m_up_pos));
+		uint64_t determined_position = getPosition(i + 1, j + 1);
+		uint64_t grass = (uint64_t)std::pow((N - 1) * N / 2, std::get<0>(m_up_pos));
 		float positon_ratio = static_cast<float>(determined_position) / grass;
 		m_current_ratio = positon_ratio;
 	}
@@ -81,7 +81,7 @@ private:
 	std::vector<std::string> m_interactive_elements;
 	std::stack<std::pair<size_t, size_t> > m_highlighting_elements;
 	std::stack<std::bitset<N> > m_coding_status;
-	std::tuple<size_t, ULONG64> m_up_pos; // 存储当前形成序的上分位置 <t,pos>
+	std::tuple<size_t, uint64_t> m_up_pos; // 存储当前形成序的上分位置 <t,pos>
 	double m_current_ratio = 0.0;
 };
 
