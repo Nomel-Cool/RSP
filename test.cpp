@@ -15,6 +15,7 @@ int main()
 		 //统计交互参数，返回上层
 		dispatch.statisticConvergence();
 		dispatch.statisticAnswering();
+		dispatch.statisticRatio();
 
 		// 考察整体平衡度
 		auto feed_back = decise.gainFeedBack();
