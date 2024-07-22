@@ -18,6 +18,8 @@ interaction(i,j) 公有 供网络调度层使用，使得ai与aj进行交互
 getCode() 公有 供反馈层调用获取二进制编码栈
 */
 
+constexpr double SHRINK_RATIO = 1e20;
+
 template<size_t N>
 class virtuality
 {
@@ -37,11 +39,12 @@ public:
 	{
 		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
 			throw;
-		uint64_t determined_position = getPosition(i + 1, j + 1);
-		uint64_t grass = (uint64_t)std::pow((N - 1) * N / 2, std::get<0>(m_up_pos));
-		float positon_ratio = static_cast<float>(determined_position) / grass;
+		double determined_position = getPosition(i + 1, j + 1) / SHRINK_RATIO;  // 缩小10^10倍
+		double grass = std::pow((N - 1) * N / 2, std::get<0>(m_up_pos)) / SHRINK_RATIO;  // 缩小10^10倍
+		double positon_ratio = static_cast<double>(determined_position) / grass;
 		m_current_ratio = positon_ratio;
 	}
+
 
 	virtual float getRatio()
 	{
