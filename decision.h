@@ -56,6 +56,7 @@ public:
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
 		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
 		auto analyse_result = analyseRegression(position_ratio_data);
+		processRegression(analyse_result);
 		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
 		return result;
 	}
