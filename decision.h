@@ -314,6 +314,19 @@ protected:
 		return std::make_tuple(max_value_i, max_value_j);
 	}
 
+	// 调用python脚本画图
+	void processRegression(std::tuple<float,float> params)
+	{
+		float a = std::get<0>(params), b = std::get<1>(params);
+		// 将参数写入CSV文件
+		std::ofstream outFile("regression_params.csv");
+		outFile << a << "," << b << std::endl;
+		outFile.close();
+
+		// 调用Python脚本
+		std::system("python plotRegression.py");
+	}
+
 	// 生成交互序列
 	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas)
 	{
@@ -348,9 +361,8 @@ protected:
 		size_t n = ratio_data.size();
 		std::vector<float> t;
 		t.clear();
-		t.resize(n);
-		for (size_t i = 0; i < n; ++i)
-			t.emplace_back(i + 1);
+		for (size_t i = 1; i <= n; ++i)
+			t.emplace_back(i);
 		auto params = calMin2(t, ratio_data);
 		return params;
 	}
