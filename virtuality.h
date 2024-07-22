@@ -34,26 +34,19 @@ public:
 	{
 
 	}
-	virtual bool interaction(size_t i, size_t j)
+	virtual void interaction(size_t i, size_t j)
 	{
 		if (i > N || i <= 0 || j <= 0 || j > N)
 			return false;
+		size_t determined_position = getPosition(i, j);
+		size_t grass = (size_t)pos((N - 1) * N / 2, std::get<0>(m_interactors) - 1);
+		float positon_ratio = static_cast<float>(determined_position) / grass;
+		m_current_ratio = position_ratio;
+	}
 
-		std::string si = m_interactive_elements.at(i - 1);
-		std::string sj = m_interactive_elements.at(j - 1);
-		m_interactive_elements.at(i - 1) = (sj + "(" + si + ")" + sj);
-		m_interactive_elements.at(j - 1) = (si + "(" + sj + ")" + si);
-
-		std::pair<size_t, size_t> highlighted_p = std::make_pair(i - 1, j - 1);
-		m_highlighting_elements.push(highlighted_p);
-
-		std::bitset<N> code;
-		code.set(N - i), code.set(N - j); // 倒置存放
-		code.flip();
-
-		m_coding_status.push(code);
-
-		return true;
+	virtual float getRatio()
+	{
+		return m_current_ratio;
 	}
 
 	virtual std::vector<std::string> getStatus()
@@ -66,6 +59,36 @@ public:
 		return m_coding_status;
 	}
 
+protected:
+	virtual size_t getPosition(size_t i, size_t j)
+	{
+		if (j < i)
+			std::swap(i, j);
+		size_t a = std::get<1>(m_interactors), b = std::get<2>(m_interactors);
+		size_t relative_position = (((2 * N - i) * (i - 1)) << 1) + j - i;
+		size_t determined_anchor = ((((2 * N - a) * (a - 1)) << 1) + b - a) * ((N - 1) * N >> 1);
+		size_t determined_position = determined_anchor + relative_position;
+		m_interactors = std::make_tuple(std::getc<0>(m_interactors) + 1, i, j);
+		return determined_position;
+	}
+	virtual void encoding_bits()
+	{
+		std::bitset<N> code;
+		code.set(N - i), code.set(N - j); // 倒置存放
+		code.flip();
+
+		m_coding_status.push(code);
+	}
+	virtual void encoding_string()
+	{
+		std::string si = m_interactive_elements.at(i - 1);
+		std::string sj = m_interactive_elements.at(j - 1);
+		m_interactive_elements.at(i - 1) = (sj + "(" + si + ")" + sj);
+		m_interactive_elements.at(j - 1) = (si + "(" + sj + ")" + si);
+
+		std::pair<size_t, size_t> highlighted_p = std::make_pair(i - 1, j - 1);
+		m_highlighting_elements.push(highlighted_p);
+	}
 	virtual float regressionRadius(size_t t, std::vector<float>& i_1, std::vector<float>& i_2, size_t query_indice = 1)
 	{
 		std::vector<float> times_sequences;
@@ -84,7 +107,6 @@ public:
 		auto radius_regression_result = calMin2(times_sequences, radius_sequences);
 		return std::get<0>(radius_regression_result) * query_indice + std::get<1>(radius_regression_result);
 	}
-
 	virtual std::set<std::tuple<int, int>> regressionOrigin(size_t t, std::vector<float>& i_1, std::vector<float>& i_2)
 	{
 		// 由推导可知拟合直线必过所有样本点的中心
@@ -115,8 +137,6 @@ public:
 		}
 		return points;
 	}
-
-protected:
 	virtual float matrix_like_summarize(const std::vector<float>& x, std::vector<float> y = std::vector<float>())
 	{
 		/* just a projection: x * y' */
@@ -143,7 +163,6 @@ protected:
 		float b = determined * (x2bar * ybar - xbar * xybar);
 		return std::make_tuple(a, b);
 	}
-
 	Eigen::Vector3f calMin3(size_t _t, std::vector<float>& x, std::vector<float>& y)
 	{
 		if (_t != x.size() || _t != y.size()) throw;
@@ -173,11 +192,20 @@ protected:
 
 		return eigenvectors.col(minIndex); // 返回最小特征值对应的特征向量就是目标方向向量
 	}
+	size_t C(size_t n, size_t m)
+	{
+		size_t ans = 1;
+		for (size_t i = 1; i <= m; i++)
+			ans = ans * (n - m + i) / i; // 注意一定要先乘再除
+		return ans;
+	}
 
 private:
 	std::vector<std::string> m_interactive_elements;
 	std::stack<std::pair<size_t, size_t> > m_highlighting_elements;
 	std::stack<std::bitset<N> > m_coding_status;
+	std::tuple<size_t, size_t, size_t> m_interactors; // 存储当前形成序：<t,i,j> (j>i)
+	float m_current_ratio = 0.0;
 };
 
 #endif
