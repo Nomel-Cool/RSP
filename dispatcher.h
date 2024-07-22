@@ -37,7 +37,7 @@ public:
 	}
 	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j)
 	{
-		//v.interaction(i, j);
+		v.interaction(i, j);
 		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
 	}
 	void show()
