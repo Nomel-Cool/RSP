@@ -3,7 +3,7 @@ import numpy as np
 import csv
 
 # 读取CSV文件中的参数
-with open('params.csv', 'r') as f:
+with open('regression_params.csv', 'r') as f:
     reader = csv.reader(f)
     params = next(reader)  # 获取第一行数据
     a, b = map(float, params)  # 将参数转换为浮点数
