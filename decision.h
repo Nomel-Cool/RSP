@@ -55,8 +55,11 @@ public:
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
 		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
-		auto analyse_result = analyseRegression(position_ratio_data);
-		processRegression(analyse_result);
+		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
+		{
+			auto analyse_result = analyseRegression(position_ratio_data);
+			processRegression(analyse_result);
+		}
 		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
 		return result;
 	}
@@ -362,7 +365,7 @@ protected:
 		size_t n = ratio_data.size();
 		std::vector<float> t;
 		t.clear();
-		for (size_t i = 1; i <= n; ++i)
+		for (size_t i = 0; i < n; ++i)
 			t.emplace_back(i);
 		auto params = calMin2(t, ratio_data);
 		return params;
