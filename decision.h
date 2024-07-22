@@ -55,6 +55,7 @@ public:
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
 		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
+		auto analyse_result = analyseRegression(position_ratio_data);
 		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
 		return result;
 	}
@@ -341,6 +342,19 @@ protected:
  		return result;
 	}
 
+	// 分析形成序的线性回归性
+	virtual std::tuple<float, float> analyseRegression(PositionRatioData ratio_data)
+	{
+		size_t n = ratio_data.size();
+		std::vector<float> t;
+		t.clear();
+		t.resize(n);
+		for (size_t i = 0; i < n; ++i)
+			t.emplace_back(i + 1);
+		auto params = calMin2(t, ratio_data);
+		return params;
+	}
+
 	std::tuple<float, float> calMin2(std::vector<float>& x, std::vector<float>& y)
 	{
 		size_t n = x.size();
@@ -384,6 +398,19 @@ protected:
 		float minValue = eigenvalues.minCoeff(&minIndex); // 找到最小特征值及其索引
 
 		return eigenvectors.col(minIndex); // 返回最小特征值对应的特征向量就是目标方向向量
+	}
+
+	virtual float matrix_like_summarize(const std::vector<float>& x, std::vector<float> y = std::vector<float>())
+	{
+		/* just a projection: x * y' */
+		size_t n = x.size();
+		if (y.size() == 0 && n != 0)
+			y = std::vector<float>(n, 1);
+		if (n != y.size())
+			throw;
+		float sum = 0.0;
+		for (size_t i = 0; i < n; ++i)
+			sum += x[i] * y[i];
 	}
 private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
