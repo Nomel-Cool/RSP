@@ -427,6 +427,7 @@ protected:
 		float sum = 0.0;
 		for (size_t i = 0; i < n; ++i)
 			sum += x[i] * y[i];
+		return sum;
 	}
 private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
