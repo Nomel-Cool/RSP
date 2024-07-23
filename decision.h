@@ -17,12 +17,14 @@
 
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
 using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
-using PositionRatioData = std::vector<float>;
+using PositionRatioData = std::vector<double>;
 using BalanceData = std::map<std::pair<size_t, size_t>, double>;
 using SizeT2 = std::tuple<size_t, size_t>;
 using SizeT3 = std::tuple<size_t, size_t, size_t>;
 using SizeT4 = std::tuple<size_t, size_t, size_t, size_t>;
 using SizeT7 = std::tuple<size_t, size_t, size_t, size_t, size_t, size_t, size_t>;
+
+constexpr size_t CONVERGENCY_LIMIT = 10; // 目前认为10次就收敛
 
 /*概要设计
 成员变量：
@@ -55,10 +57,15 @@ public:
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
 		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
+		bool is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.end());
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
 			processRegression(analyse_result);
+		}
+		if (is_boundary_converged)
+		{
+
 		}
 		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
 		return result;
@@ -360,10 +367,10 @@ protected:
 	}
 
 	// 分析形成序的线性回归性
-	virtual std::tuple<float, float> analyseRegression(PositionRatioData ratio_data)
+	virtual std::tuple<double, double> analyseRegression(PositionRatioData ratio_data)
 	{
 		size_t n = ratio_data.size();
-		std::vector<float> t;
+		std::vector<double> t;
 		t.clear();
 		for (size_t i = 0; i < n; ++i)
 			t.emplace_back(i);
@@ -371,22 +378,48 @@ protected:
 		return params;
 	}
 
-	std::tuple<float, float> calMin2(std::vector<float>& x, std::vector<float>& y)
+	// 分析交互元上下限变化
+	virtual bool analyseInteractionBoundary(double ratio)
+	{
+		// 判断m_ratio_boundary是否有ratio这个键
+		if (m_ratio_boundary.find(ratio) != m_ratio_boundary.end())
+			m_ratio_boundary[ratio]++;
+		else
+			m_ratio_boundary[ratio] = 1;
+
+		// 获取m_ratio_boundary的最小和最大键值
+		double min_ratio = m_ratio_boundary.begin()->first;
+		double max_ratio = m_ratio_boundary.rbegin()->first;
+
+		// 判断入参的ratio是否有低于当前m_ratio_boundary的下界或者上界
+		if (ratio < min_ratio || ratio > max_ratio)
+			m_meaning_field_converge++;
+		else
+			m_meaning_field_converge = 0;
+
+		// 判断当前模型是否已经收敛
+		if (m_meaning_field_converge == CONVERGENCY_LIMIT)
+			return true;
+		else
+			return false;
+	}
+
+	std::tuple<double, double> calMin2(std::vector<double>& x, std::vector<double>& y)
 	{
 		size_t n = x.size();
 		if (n != y.size())
 			throw;
-		float xbar = matrix_like_summarize(x);
-		float x2bar = matrix_like_summarize(x, x);
-		float ybar = matrix_like_summarize(y);
-		float xybar = matrix_like_summarize(x, y);
-		float denominator = n * x2bar - xbar * xbar;
-		float a = (n * xybar - xbar * ybar) / denominator;
-		float b = (x2bar * ybar - xbar * xybar) / denominator;
+		double xbar = matrix_like_summarize(x);
+		double x2bar = matrix_like_summarize(x, x);
+		double ybar = matrix_like_summarize(y);
+		double xybar = matrix_like_summarize(x, y);
+		double denominator = n * x2bar - xbar * xbar;
+		double a = (n * xybar - xbar * ybar) / denominator;
+		double b = (x2bar * ybar - xbar * xybar) / denominator;
 		return std::make_tuple(a, b);
 	}
 
-	Eigen::Vector3f calMin3(size_t _t, std::vector<float>& x, std::vector<float>& y)
+	Eigen::Vector3f calMin3(size_t _t, std::vector<double>& x, std::vector<double>& y)
 	{
 		if (_t != x.size() || _t != y.size()) throw;
 
@@ -416,12 +449,12 @@ protected:
 		return eigenvectors.col(minIndex); // 返回最小特征值对应的特征向量就是目标方向向量
 	}
 
-	virtual float matrix_like_summarize(const std::vector<float>& x, std::vector<float> y = std::vector<float>())
+	virtual double matrix_like_summarize(const std::vector<double>& x, std::vector<double> y = std::vector<double>())
 	{
 		/* just a projection: x * y' */
 		size_t n = x.size();
 		if (y.size() == 0 && n != 0)
-			y = std::vector<float>(n, 1);
+			y = std::vector<double>(n, 1);
 		if (n != y.size())
 			throw;
 		float sum = 0.0;
@@ -431,6 +464,8 @@ protected:
 	}
 private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
+	std::map<double, size_t> m_ratio_boundary;
+	size_t m_meaning_field_converge = 0;
 };
 
 #endif // !DECISION_H
