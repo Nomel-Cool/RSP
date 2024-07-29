@@ -47,7 +47,11 @@ public:
 
 	}
 
-	virtual SizeT7 gainFeedBack(const std::string& accuracy_file, const std::string& answer_file, const std::string& order_file, const std::string& ratio_file, const std::string& regression_file)
+	virtual SizeT7 gainFeedBack(const std::string& accuracy_file,
+		const std::string& answer_file, 
+		const std::string& order_file, 
+		const std::string& ratio_file, 
+		const std::string& regression_file)
 	{
 		/* 【Begin】 ******** 处理reality相关反馈 *********/
 		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
@@ -59,6 +63,38 @@ public:
 		PositionRatioData position_ratio_data = readFile4PositionRatioData(ratio_file);
 		bool is_boundary_converged = false;
 		if(!position_ratio_data.empty())
+			is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.rbegin());
+		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
+		{
+			auto analyse_result = analyseRegression(position_ratio_data);
+			processRegression(analyse_result, regression_file);
+		}
+		if (is_boundary_converged)
+		{
+
+		}
+		/* 【Finish】 ******** 处理virtuality相关反馈 *********/
+		return result;
+	}
+
+	virtual SizeT7 gainFeedBack(const std::string& accuracy_file,
+		const std::string& answer_file,
+		const std::string& order_file,
+		const std::string& ratio_file,
+		const std::string& regression_file,
+		size_t exam_i,
+		size_t exam_j)
+	{
+		/* 【Begin】 ******** 处理reality相关反馈 *********/
+		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
+		AnswerData answer_data = readFile4AnswerData(answer_file);
+		auto result = processingarguments(accuracy_data, answer_data, order_file, exam_i, exam_j);
+		/* 【Finish】 ******** 处理reality相关反馈 *********/
+
+		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
+		PositionRatioData position_ratio_data = readFile4PositionRatioData(ratio_file);
+		bool is_boundary_converged = false;
+		if (!position_ratio_data.empty())
 			is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.rbegin());
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
@@ -292,6 +328,23 @@ protected:
 		return std::make_tuple(_i, _j, index_query.first, index_query.second);
 	}
 
+	// 为追加试验算法增加的重载
+	SizeT4 processAccuracy(const AccuracyData& accuracy_datas, size_t exam_i, size_t exam_j)
+	{
+		size_t _i = exam_i;
+		size_t _j = exam_j;
+
+		// 重复选择多次，添加惩罚，转嫁到随机上
+		bool isPenal = penalty(_i, _j);
+		if (isPenal)
+			executePenalty(_i, _j);
+
+		// 挑选最大超验收敛率的组
+		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
+
+		return std::make_tuple(_i, _j, index_query.first, index_query.second);
+	}
+
 	SizeT2 processAnswer(SizeT4 query_info, const AnswerData& answer_datas)
 	{
 		size_t _i = std::get<0>(query_info), _j = std::get<1>(query_info), query_indice_i = std::get<2>(query_info), query_indice_j = std::get<3>(query_info);
@@ -366,6 +419,34 @@ protected:
 			std::get<2>(query_info), std::get<0>(answer_info), 
 			std::get<3>(query_info), std::get<1>(answer_info));
  		return result;
+	}
+
+	// 重载的交互序列生成函数
+	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file, size_t exam_i, size_t exam_j)
+	{
+		SizeT4 query_info = processAccuracy(accuracy_datas, exam_i, exam_j);
+
+		SizeT2 answer_info = processAnswer(query_info, answer_datas);
+
+		// 读取文件当前的最后一行获取上一行的序号
+		std::ifstream inFile(order_file);
+		std::string line;
+		size_t t = 0;
+		if (inFile.peek() != std::ifstream::traits_type::eof())
+			while (std::getline(inFile, line))
+			{
+				std::istringstream iss(line);
+				std::string token;
+				std::getline(iss, token, ',');
+				t = std::stoi(token);
+			}
+		inFile.close();
+
+		auto result = std::make_tuple(t + 1,
+			std::get<0>(query_info), std::get<1>(query_info),
+			std::get<2>(query_info), std::get<0>(answer_info),
+			std::get<3>(query_info), std::get<1>(answer_info));
+		return result;
 	}
 
 	// 分析形成序的线性回归性
