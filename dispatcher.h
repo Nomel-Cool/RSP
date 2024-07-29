@@ -47,9 +47,9 @@ public:
 		v.interaction(i, j, isStored);
 		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
 	}
-	void show()
+	void show(const std::string& ouput_file = "interaction_output.csv")
 	{
-		r.show();
+		r.show(ouput_file);
 		for (auto e : v.getStatus())
 			printf(e.c_str());
 	}
@@ -88,9 +88,9 @@ public:
 	{
 		
 	}
-	void show(const std::string& manipulate_item)
+	void show(const std::string& manipulate_item, const std::string& output_file = "interaction_output.csv")
 	{
-		env[manipulate_item].show();
+		env[manipulate_item].show(output_file);
 	}
 	void interaction(bool isStored = false)
 	{
