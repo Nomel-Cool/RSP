@@ -42,9 +42,9 @@ public:
 		groupId = groupId;
 		binded = binded;
 	}
-	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j)
+	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j, bool isStored = false)
 	{
-		v.interaction(i, j);
+		v.interaction(i, j, isStored);
 		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
 	}
 	void show()
@@ -92,7 +92,7 @@ public:
 	{
 		env["normal"].show();
 	}
-	void interaction()
+	void interaction(bool isStored = false)
 	{
 		std::ifstream file("interaction_orders.csv");
 		std::string line;
@@ -213,7 +213,8 @@ public:
 		/***由decision继续执行examing的认知收敛到平衡标准***/
 
 		// 要求virtuality以内存方式递交测试交互序
-
+		auto sequences = env["examing"].getV().getInteractSequence();
+		
 		// 按照交互序直接操作reality执行交互
 
 		// 符合交互结果的交互序放入另外的集合用于返回
