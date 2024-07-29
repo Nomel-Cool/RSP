@@ -1,15 +1,20 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
+import sys
+
+# 获取命令行参数
+params_file = sys.argv[1]
+data_file = sys.argv[2]
 
 # 读取CSV文件中的参数
-with open('regression_params.csv', 'r') as f:
+with open(params_file, 'r') as f:
     reader = csv.reader(f)
     params = next(reader)  # 获取第一行数据
     a, b = map(float, params)  # 将参数转换为浮点数
 
 # 读取样本数据
-with open('interaction_ratio.csv', 'r') as f:
+with open(data_file, 'r') as f:
     reader = csv.reader(f)
     sample_data = [float(row[0]) for row in reader]  # 将样本数据转换为浮点数
 
