@@ -30,6 +30,13 @@ public:
 		binded = false;
 		groupId = -1;
 	}
+	void copy(const Node& other)
+	{
+		groupId = other.groupId;
+		binded = other.binded;
+		r = other.r;
+		v = other.v;
+	}
 	void enlist(int groupId, bool binded)
 	{
 		groupId = groupId;
@@ -197,6 +204,20 @@ public:
 		virtuality<N> v = env["normal"].getV();
 		float ratio = v.getRatio();
 		writeToFile(ratio, "interaction_ratio.csv");
+	}
+	virtual void examination()
+	{
+		// 阻塞备份“normal”的交互环境到"examing" 且 扩张reality交互环境规模
+		env["examing"].copy(env["normal"]);
+		
+		/***由decision继续执行examing的认知收敛到平衡标准***/
+
+		// 要求virtuality以内存方式递交测试交互序
+
+		// 按照交互序直接操作reality执行交互
+
+		// 符合交互结果的交互序放入另外的集合用于返回
+
 	}
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
@@ -462,5 +483,4 @@ protected:
 private:
 	std::map<std::string, Node<N, max_value, max_size> > env; // 更改环境由标签描述取出
 };
-
 #endif // !DISPATCHER_H
