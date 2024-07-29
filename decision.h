@@ -73,31 +73,16 @@ public:
 		return result;
 	}
 
-	virtual void makeOrders(SizeT7 arguments)
+	virtual void makeOrders(SizeT7 arguments, const std::string& manipulate_item)
 	{
 		// 追加到文件interaction_orders.csv的尾部
 		std::ofstream outFile("interaction_orders.csv", std::ios_base::app);
 		outFile << std::get<0>(arguments) << ","
-			<< "normal" // 暂时只考虑一个Node的情况
+			<< manipulate_item // 暂时只考虑一个Node的情况
 			<< "," << std::get<1>(arguments) << "," << std::get<2>(arguments)
 			<< "," << std::get<3>(arguments) << "," << std::get<4>(arguments)
 			<< "," << std::get<5>(arguments) << "," << std::get<6>(arguments) << "\n";
 		outFile.close();
-	}
-
-	virtual void examination()
-	{
-		// 阻塞备份“normal”的交互环境到"examing"
-
-		// 扩张reality交互环境规模
-
-		// 执行认知收敛到平衡标准
-
-		// 要求virtuality以内存方式递交测试交互序
-
-		// 按照交互序直接操作reality执行交互
-
-		// 符合交互结果的交互序放入另外的集合用于返回
 	}
 
 protected:
@@ -436,29 +421,29 @@ protected:
 		return std::make_tuple(a, b);
 	}
 
-	Eigen::Vector3f calMin3(size_t _t, std::vector<double>& x, std::vector<double>& y)
+	Eigen::Vector3d calMin3(size_t _t, std::vector<double>& x, std::vector<double>& y)
 	{
 		if (_t != x.size() || _t != y.size()) throw;
 
 		// 构造array_t
-		std::vector<float> t;
+		std::vector<double> t;
 		t.clear();
 		t.resize(_t);
 		for (size_t j = 1; j <= _t; ++j)
 			t.emplace_back(j);
 
 		/* 求取拟合直线的单位方向向量 */
-		Eigen::Matrix3f S = Eigen::Matrix3f::Zero(); // 初始化S为零矩阵
+		Eigen::Matrix3d S = Eigen::Matrix3d::Zero(); // 初始化S为零矩阵
 
 		for (int i = 0; i < _t; i++)
 		{
-			Eigen::Vector3f Yi(x[i], y[i], t[i]); // 构造向量Yi
+			Eigen::Vector3d Yi(x[i], y[i], t[i]); // 构造向量Yi
 			S += Yi * Yi.transpose() - Yi * Yi.transpose(); // 计算每一项并累加到S
 		}
 
-		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3f> solver(S); // 创建一个用于求解特征值和特征向量的求解器
-		Eigen::Vector3f eigenvalues = solver.eigenvalues().real(); // 计算特征值
-		Eigen::Matrix3f eigenvectors = solver.eigenvectors(); // 计算特征向量
+		Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(S); // 创建一个用于求解特征值和特征向量的求解器
+		Eigen::Vector3d eigenvalues = solver.eigenvalues().real(); // 计算特征值
+		Eigen::Matrix3d eigenvectors = solver.eigenvectors(); // 计算特征向量
 
 		int minIndex;
 		float minValue = eigenvalues.minCoeff(&minIndex); // 找到最小特征值及其索引
