@@ -390,7 +390,9 @@ protected:
 		outFile.close();
 
 		// 调用Python脚本
-		std::system("python plotRegression.py");
+		std::string data_file = "interaction_ratio.csv";
+		std::string command = "python plotRegression.py " + regression_param_file + " " + data_file;
+		std::system(command.c_str());
 	}
 
 	// 生成交互序列
