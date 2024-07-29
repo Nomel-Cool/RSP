@@ -74,7 +74,8 @@ class dispatcher
 public:
 	dispatcher()
 	{
-		env.resize(scale);
+		env["normal"] = Node<N, max_value, max_size>();
+		env["examing"] = Node<N, max_value, max_size>();
 	}
 	void bind(int groupId, int arg, ...)
 	{
@@ -82,7 +83,7 @@ public:
 	}
 	void show(size_t i)
 	{
-		env[i].show();
+		env["normal"].show();
 	}
 	void interaction()
 	{
@@ -107,55 +108,50 @@ public:
 			std::getline(iss, a_i, ',');
 			std::getline(iss, q_j, ',');
 			std::getline(iss, a_j, ',');
-			int nodeId = std::stoi(node_id);
 			size_t i = std::stoul(item_i);
 			size_t j = std::stoul(item_j);
 			size_t query_i = std::stoul(q_i);
 			size_t answer_i = std::stoul(a_i);
 			size_t query_j = std::stoul(q_j);
 			size_t answer_j = std::stoul(a_j);
-			if (nodeId >= 0 && nodeId < env.size())
-				env[nodeId].set(i, j, query_i, answer_i, query_j, answer_j);
+			if (env.find(node_id) != env.end())
+				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j);
 		}
 	}
 	void statisticConvergence()
 	{
 		AccuracyData condense_rates;
+		reality<N> r = env["normal"].getR();
 
-		for (size_t i = 0; i < env.size(); ++i)
+		/* u -> v */
+		for (size_t u = 0; u < N; ++u)
 		{
-			reality<N> r = env[i].getR();
+			// 求取第u个交互元的层集
+			auto e = r.getDataPairs(u);
+			auto layerSets4e = getLayerSets(e);
 
-			/* u -> v */
-			for (size_t u = 0; u < N; ++u)
+			// 考量第v个交互元与第u个交互元交互时
+			for (size_t v = 0; v < N; ++v)
 			{
-				// 求取第u个交互元的层集
-				auto e = r.getDataPairs(u);
-				auto layerSets4e = getLayerSets(e);
+				if (u == v) continue;
 
-				// 考量第v个交互元与第u个交互元交互时
-				for (size_t v = 0; v < N; ++v)
-				{
-					if (u == v) continue;
+				// 求取第v个交互元的层集
+				auto w = r.getDataPairs(v);
+				auto layerSets4w = getLayerSets(w);
 
-					// 求取第v个交互元的层集
-					auto w = r.getDataPairs(v);
-					auto layerSets4w = getLayerSets(w);
+				// 计算平衡度，首先放入压缩信息
+				double balance_degree = calculateBalanceDegree(w);
+				condense_rates[{u, v}].push_back(balance_degree);
 
-					// 计算平衡度，首先放入压缩信息
-					double balance_degree = calculateBalanceDegree(w);
-					condense_rates[{u, v}].push_back(balance_degree);
+				// 计算e的缺损集
+				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
-					// 计算e的缺损集
-					auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
+				// 计算e的缺损差值集给寻问元，计算w的缺损差值集给应当元
+				auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
 
-					// 计算e的缺损差值集给寻问元，计算w的缺损差值集给应当元
-					auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
-
-					// 计算认知收敛率
-					auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
-					condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
-				}
+				// 计算认知收敛率
+				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
+				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
 			}
 		}
 
@@ -164,37 +160,33 @@ public:
 	void statisticAnswering()
 	{
 		AnswerData answer_rate;
+		reality<N> r = env["normal"].getR();
 
-		for (size_t i = 0; i < env.size(); ++i)
+		/* u -> v */
+		for (size_t u = 0; u < N; ++u)
 		{
-			reality<N> r = env[i].getR();
+			// 求取第u个交互元的层集
+			auto e = r.getDataPairs(u);
+			auto layerSets4e = getLayerSets(e);
 
-			/* u -> v */
-			for (size_t u = 0; u < N; ++u)
+			// 考量第v个交互元与第u个交互元交互时
+			for (size_t v = 0; v < N; ++v)
 			{
-				// 求取第u个交互元的层集
-				auto e = r.getDataPairs(u);
-				auto layerSets4e = getLayerSets(e);
+				if (u == v) continue;
 
-				// 考量第v个交互元与第u个交互元交互时
-				for (size_t v = 0; v < N; ++v)
-				{
-					if (u == v) continue;
+				// 求取第v个交互元的层集
+				auto w = r.getDataPairs(v);
+				auto layerSets4w = getLayerSets(w);
 
-					// 求取第v个交互元的层集
-					auto w = r.getDataPairs(v);
-					auto layerSets4w = getLayerSets(w);
+				// 计算e的缺损集
+				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
-					// 计算e的缺损集
-					auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
+				// 计算w的缺损差值集给应当元
+				auto DiffLackSets4w = calculateLackDiffSets(LackSets4e, w);
 
-					// 计算w的缺损差值集给应当元
-					auto DiffLackSets4w = calculateLackDiffSets(LackSets4e, w);
-
-					// 计算认知收敛率
-					auto Rates4w = calculateRates4Answer(DiffLackSets4w, layerSets4w);
-					answer_rate[{u, v}] = Rates4w;
-				}
+				// 计算认知收敛率
+				auto Rates4w = calculateRates4Answer(DiffLackSets4w, layerSets4w);
+				answer_rate[{u, v}] = Rates4w;
 			}
 		}
 
@@ -202,12 +194,13 @@ public:
 	}
 	void statisticRatio()
 	{
-		for (size_t i = 0; i < env.size(); ++i)
-		{
-			virtuality<N> v = env[i].getV();
-			float ratio = v.getRatio();
-			writeToFile(ratio, "interaction_ratio.csv");
-		}
+		virtuality<N> v = env["normal"].getV();
+		float ratio = v.getRatio();
+		writeToFile(ratio, "interaction_ratio.csv");
+	}
+	void examination()
+	{
+
 	}
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
@@ -283,7 +276,6 @@ protected:
 		outFile << '\n';
 		outFile.close();
 	}
-
 
 	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
 	{
@@ -472,7 +464,7 @@ protected:
 		return resultSets;
 	}
 private:
-	std::vector<Node<N, max_value, max_size> > env;
+	std::map<std::string, Node<N, max_value, max_size> > env; // 更改环境由标签描述取出
 };
 
 #endif // !DISPATCHER_H
