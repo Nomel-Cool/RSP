@@ -209,17 +209,19 @@ public:
 	{
 		// 阻塞备份“normal”的交互环境到"examing" 且 扩张reality交互环境规模
 		env["examing"].copy(env["normal"]);
-		
-		/***由decision继续执行examing的认知收敛到平衡标准***/
 
-		// 要求virtuality以内存方式递交测试交互序
-		auto sequences = env["examing"].getV().getInteractSequence();
-		
-		// 按照交互序直接操作reality执行交互
-
-		// 符合交互结果的交互序放入另外的集合用于返回
-
+		// 拷贝所有资源文件到exam版本下
+		for (const auto& entry : std::filesystem::directory_iterator("./"))
+		{
+			if (entry.path().extension() == ".csv" && entry.path().string().find("_exam") == std::string::npos)
+			{
+				std::string sourceFile = entry.path().string();
+				std::string destFile = sourceFile.substr(0, sourceFile.find_last_of(".")) + "_exam.csv";
+				copyFile(sourceFile, destFile);
+			}
+		}
 	}
+
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
 	{
@@ -293,6 +295,13 @@ protected:
 		outFile << std::scientific << ratio;  // 使用科学计数法
 		outFile << '\n';
 		outFile.close();
+	}
+
+	void copyFile(const std::string& sourceFile, const std::string& destFile)
+	{
+		std::ifstream src(sourceFile, std::ios::binary);
+		std::ofstream dst(destFile, std::ios::binary);
+		dst << src.rdbuf();
 	}
 
 	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
