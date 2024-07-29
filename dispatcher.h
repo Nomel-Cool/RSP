@@ -125,10 +125,10 @@ public:
 				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j);
 		}
 	}
-	void statisticConvergence()
+	void statisticConvergence(const std::string& manipulate_item, const std::string& report_filename = "interaction_accuracy.csv")
 	{
 		AccuracyData condense_rates;
-		reality<N> r = env["normal"].getR();
+		reality<N> r = env[manipulate_item].getR();
 
 		/* u -> v */
 		for (size_t u = 0; u < N; ++u)
@@ -162,12 +162,12 @@ public:
 			}
 		}
 
-		writeToFile(condense_rates,"interaction_accuracy.csv");
+		writeToFile(condense_rates, report_filename);
 	}
-	void statisticAnswering()
+	void statisticAnswering(const std::string& manipulate_item, const std::string& report_filename = "interaction_answer.csv")
 	{
 		AnswerData answer_rate;
-		reality<N> r = env["normal"].getR();
+		reality<N> r = env[manipulate_item].getR();
 
 		/* u -> v */
 		for (size_t u = 0; u < N; ++u)
@@ -197,7 +197,7 @@ public:
 			}
 		}
 
-		writeToFile(answer_rate, "interaction_answer.csv");
+		writeToFile(answer_rate, report_filename);
 	}
 	void statisticRatio()
 	{
