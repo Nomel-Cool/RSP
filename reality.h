@@ -210,19 +210,50 @@ public:
         file.close(); // Close the file when done
     }
 
+    virtual void expansion(size_t max_value, size_t extra_size)
+    {
+        tag();
+        std::default_random_engine generator;
+        std::uniform_int_distribution<size_t> distribution(0, max_value);
+        size_t n = m_interactive_instances.size();
+        for (size_t i = 0; i < extra_size; ++i)
+        {
+            size_t rand_value = distribution(generator);
+            m_interactive_instances[n + i].emplace_back(std::make_pair(rand_value, std::to_string(rand_value)));
+        }
+    }
+
+    virtual void rollBack()
+    {
+        if (m_interactive_backup.empty())
+            return;
+        m_interactive_instances.clear();
+        m_interactive_instances = m_interactive_backup;
+    }
+protected: 
+    size_t parseAdditionExpr(const std::string& str)
+    {
+        size_t sum = 0;
+        std::istringstream iss(str);
+        std::string part;
+        while (std::getline(iss, part, '+'))
+            sum += std::stoul(part);
+        return sum;
+    }
+
     virtual void sortByExprLen()
     {
         for (auto& pair : m_interactive_instances)
         {
             std::sort(pair.second.begin(), pair.second.end(),
-                [](const auto& a,const auto& b)
+                [](const auto& a, const auto& b)
                 {
                     // 计算 "+" 的数量
                     auto countPlus =
-                    [](const auto& str)
-                    {
-                        return std::count(str.begin(), str.end(), '+');
-                    };
+                        [](const auto& str)
+                        {
+                            return std::count(str.begin(), str.end(), '+');
+                        };
 
                     int countA = countPlus(a.second);
                     int countB = countPlus(b.second);
@@ -278,19 +309,16 @@ public:
             return distrib(gen);
         }
     }
-protected: 
-    size_t parseAdditionExpr(const std::string& str)
+
+    virtual void tag()
     {
-        size_t sum = 0;
-        std::istringstream iss(str);
-        std::string part;
-        while (std::getline(iss, part, '+'))
-            sum += std::stoul(part);
-        return sum;
+        m_interactive_backup.clear();
+        m_interactive_backup = m_interactive_instances;
     }
 private:
     // <交互元ID,{<QBag_i,ABag_i>}>
     std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_instances;
-};
 
+    std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_backup;
+};
 #endif // !REALITY_H
