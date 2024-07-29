@@ -47,16 +47,16 @@ public:
 
 	}
 
-	virtual SizeT7 gainFeedBack()
+	virtual SizeT7 gainFeedBack(const std::string& accuracy_file, const std::string& answer_file, const std::string& ratio_file)
 	{
 		/* 【Begin】 ******** 处理reality相关反馈 *********/
-		AccuracyData accuracy_data = readFile4AccuracyData("interaction_accuracy.csv");
-		AnswerData answer_data = readFile4AnswerData("interaction_answer.csv");
+		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
+		AnswerData answer_data = readFile4AnswerData(answer_file);
 		auto result = processingarguments(accuracy_data, answer_data);
 		/* 【Finish】 ******** 处理reality相关反馈 *********/
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
-		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
+		PositionRatioData position_ratio_data = readFile4PositionRatioData(ratio_file);
 		bool is_boundary_converged = false;
 		if(!position_ratio_data.empty())
 			is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.rbegin());
@@ -73,10 +73,10 @@ public:
 		return result;
 	}
 
-	virtual void makeOrders(SizeT7 arguments, const std::string& manipulate_item)
+	virtual void makeOrders(SizeT7 arguments, const std::string& manipulate_item, const std::string& order_file = "interaction_orders.csv")
 	{
 		// 追加到文件interaction_orders.csv的尾部
-		std::ofstream outFile("interaction_orders.csv", std::ios_base::app);
+		std::ofstream outFile(order_file, std::ios_base::app);
 		outFile << std::get<0>(arguments) << ","
 			<< manipulate_item // 暂时只考虑一个Node的情况
 			<< "," << std::get<1>(arguments) << "," << std::get<2>(arguments)
