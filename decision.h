@@ -47,12 +47,12 @@ public:
 
 	}
 
-	virtual SizeT7 gainFeedBack(const std::string& accuracy_file, const std::string& answer_file, const std::string& ratio_file)
+	virtual SizeT7 gainFeedBack(const std::string& accuracy_file, const std::string& answer_file, const std::string& order_file, const std::string& ratio_file, const std::string& regression_file)
 	{
 		/* 【Begin】 ******** 处理reality相关反馈 *********/
 		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
 		AnswerData answer_data = readFile4AnswerData(answer_file);
-		auto result = processingarguments(accuracy_data, answer_data);
+		auto result = processingarguments(accuracy_data, answer_data, order_file);
 		/* 【Finish】 ******** 处理reality相关反馈 *********/
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
@@ -63,7 +63,7 @@ public:
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
-			processRegression(analyse_result);
+			processRegression(analyse_result, regression_file);
 		}
 		if (is_boundary_converged)
 		{
@@ -328,11 +328,11 @@ protected:
 	}
 
 	// 调用python脚本画图
-	void processRegression(std::tuple<float,float> params)
+	void processRegression(std::tuple<float,float> params, const std::string& regression_param_file = "regression_params.csv")
 	{
 		float a = std::get<0>(params), b = std::get<1>(params);
 		// 将参数写入CSV文件
-		std::ofstream outFile("regression_params.csv");
+		std::ofstream outFile(regression_param_file);
 		outFile << a << "," << b << std::endl;
 		outFile.close();
 
@@ -341,14 +341,14 @@ protected:
 	}
 
 	// 生成交互序列
-	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas)
+	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file = "interaction_orders.csv")
 	{
 		SizeT4 query_info = processAccuracy(accuracy_datas);
 
 		SizeT2 answer_info = processAnswer(query_info, answer_datas);
 
 		// 读取文件当前的最后一行获取上一行的序号
-		std::ifstream inFile("interaction_orders.csv");
+		std::ifstream inFile(order_file);
 		std::string line;
 		size_t t = 0;
 		if (inFile.peek() != std::ifstream::traits_type::eof())
