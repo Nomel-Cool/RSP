@@ -19,7 +19,7 @@ with open(data_file, 'r') as f:
     sample_data = [float(row[0]) for row in reader]  # 将样本数据转换为浮点数
 
 # 创建x坐标
-x = np.linspace(1, len(sample_data), len(sample_data))  # x坐标从1开始，到样本数据的长度结束
+x = np.linspace(0, len(sample_data) - 1, len(sample_data))  # x坐标从0开始，到样本数据的长度结束
 
 # 计算y坐标
 y = a * x + b
