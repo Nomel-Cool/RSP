@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <sstream>
 #include <string>
+#include <iomanip> //科学计数法精度控制
 
 using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double >>;
 using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
@@ -308,10 +309,11 @@ protected:
 	void writeToFile(const float ratio, const std::string& filename)
 	{
 		std::ofstream outFile(filename, std::ios::app); // 追加模式
-		outFile << std::scientific << ratio;  // 使用科学计数法
+		outFile << std::scientific << std::setprecision(17) << ratio;  // 使用科学计数法并设置精度为17
 		outFile << '\n';
 		outFile.close();
 	}
+
 
 	void copyFile(const std::string& sourceFile, const std::string& destFile)
 	{
