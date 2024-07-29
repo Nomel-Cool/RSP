@@ -175,9 +175,9 @@ public:
         return std::vector<std::pair<size_t, std::string>>();
     }
 
-    virtual void show()
+    virtual void show(const std::string& ouput_file = "interaction_output.csv")
     {
-        std::ofstream file("interaction_output.csv");
+        std::ofstream file(ouput_file);
 
         // Write data
         for (auto& pair : m_interactive_instances)
