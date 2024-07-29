@@ -85,6 +85,21 @@ public:
 		outFile.close();
 	}
 
+	virtual void examination()
+	{
+		// 阻塞备份“normal”的交互环境到"examing"
+
+		// 扩张reality交互环境规模
+
+		// 执行认知收敛到平衡标准
+
+		// 要求virtuality以内存方式递交测试交互序
+
+		// 按照交互序直接操作reality执行交互
+
+		// 符合交互结果的交互序放入另外的集合用于返回
+	}
+
 protected:
 
 	// 计算协方差，使用迫半期望expectation来替代原本的期望
