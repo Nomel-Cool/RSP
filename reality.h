@@ -15,6 +15,7 @@
 #include <string>
 #include <algorithm>
 #include <set>
+#include <stack>
 
 #include <fstream> // for file operations
 #include <iterator> // for std::ostream_iterator
@@ -212,7 +213,6 @@ public:
 
     virtual void expansion(size_t max_value, size_t extra_size)
     {
-        tag();
         std::default_random_engine generator;
         std::uniform_int_distribution<size_t> distribution(0, max_value);
         size_t n = m_interactive_instances.size();
@@ -223,12 +223,17 @@ public:
         }
     }
 
+    virtual void tag()
+    {
+        m_interactive_backup.push(m_interactive_instances);
+    }
+
     virtual void rollBack()
     {
         if (m_interactive_backup.empty())
             return;
-        m_interactive_instances.clear();
-        m_interactive_instances = m_interactive_backup;
+        m_interactive_instances = m_interactive_backup.top();
+        m_interactive_backup.pop();
     }
 protected: 
     size_t parseAdditionExpr(const std::string& str)
@@ -309,16 +314,10 @@ protected:
             return distrib(gen);
         }
     }
-
-    virtual void tag()
-    {
-        m_interactive_backup.clear();
-        m_interactive_backup = m_interactive_instances;
-    }
 private:
     // <½»»¥ÔªID,{<QBag_i,ABag_i>}>
     std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_instances;
 
-    std::map<size_t, std::vector<std::pair<size_t, std::string>>> m_interactive_backup;
+    std::stack<std::map<size_t, std::vector<std::pair<size_t, std::string>>>> m_interactive_backup;
 };
 #endif // !REALITY_H
