@@ -88,9 +88,9 @@ public:
 	{
 		
 	}
-	void show(size_t i)
+	void show(const std::string& manipulate_item)
 	{
-		env["normal"].show();
+		env[manipulate_item].show();
 	}
 	void interaction(bool isStored = false)
 	{
