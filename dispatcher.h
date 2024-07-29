@@ -199,11 +199,11 @@ public:
 
 		writeToFile(answer_rate, report_filename);
 	}
-	void statisticRatio()
+	void statisticRatio(const std::string& manipulate_item, const std::string& report_filename = "interaction_ratio.csv")
 	{
-		virtuality<N> v = env["normal"].getV();
+		virtuality<N> v = env[manipulate_item].getV();
 		float ratio = v.getRatio();
-		writeToFile(ratio, "interaction_ratio.csv");
+		writeToFile(ratio, report_filename);
 	}
 	virtual void examination()
 	{
