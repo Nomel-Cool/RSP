@@ -56,14 +56,26 @@ public:
 	/// </summary>
 	/// <param name="i"></param>
 	/// <param name="j"></param>
-	virtual void interaction(size_t i, size_t j)
+	virtual void interaction(size_t i, size_t j, bool isStored = false)
 	{
 		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
 			throw;
+		if (isStored)
+			m_stored_makeup_sequence.emplace_back(std::make_pair(i, j));
 		double relative_position = getPosition(i + 1, j + 1);
 		double grass = (N - 1) * N / 2;
 		double positon_ratio = static_cast<double>(relative_position) / grass;
 		m_current_ratio = positon_ratio;
+	}
+
+	virtual void clearMemory()
+	{
+		m_stored_makeup_sequence.clear();
+	}
+
+	virtual std::vector<std::pair<size_t, size_t>> getInteractSequence()
+	{
+		return m_stored_makeup_sequence;
 	}
 
 	virtual float getRatio()
@@ -112,6 +124,7 @@ protected:
 
 private:
 	std::vector<std::string> m_interactive_elements;
+	std::vector<std::pair<size_t, size_t>> m_stored_makeup_sequence;
 	std::stack<std::pair<size_t, size_t> > m_highlighting_elements;
 	std::stack<std::bitset<N> > m_coding_status;
 	std::tuple<size_t, uint64_t> m_up_pos; // 存储当前形成序的上分位置 <t,pos>
