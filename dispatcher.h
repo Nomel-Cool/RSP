@@ -206,6 +206,14 @@ public:
 		float ratio = v.getRatio();
 		writeToFile(ratio, report_filename);
 	}
+	virtual void preserver(const std::string& manipulate_item)
+	{
+		env[manipulate_item].getR().tag();
+	}
+	virtual void recover(const std::string& manipulate_item)
+	{
+		env[manipulate_item].getR().rollBack();
+	}
 	virtual void examination(size_t max_value, size_t extra_size, const std::string& manipulate_item = "examing")
 	{
 		// 阻塞备份“normal”的交互环境到"examing"
