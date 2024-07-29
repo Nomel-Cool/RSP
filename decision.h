@@ -57,7 +57,9 @@ public:
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
 		PositionRatioData position_ratio_data = readFile4PositionRatioData("interaction_ratio.csv");
-		bool is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.end());
+		bool is_boundary_converged = false;
+		if(!position_ratio_data.empty())
+			is_boundary_converged = analyseInteractionBoundary(*position_ratio_data.rbegin());
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
@@ -76,7 +78,7 @@ public:
 		// 追加到文件interaction_orders.csv的尾部
 		std::ofstream outFile("interaction_orders.csv", std::ios_base::app);
 		outFile << std::get<0>(arguments) << ","
-			<< 0 // 暂时只考虑一个Node的情况
+			<< "normal" // 暂时只考虑一个Node的情况
 			<< "," << std::get<1>(arguments) << "," << std::get<2>(arguments)
 			<< "," << std::get<3>(arguments) << "," << std::get<4>(arguments)
 			<< "," << std::get<5>(arguments) << "," << std::get<6>(arguments) << "\n";
