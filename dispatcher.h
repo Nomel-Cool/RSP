@@ -198,10 +198,6 @@ public:
 		float ratio = v.getRatio();
 		writeToFile(ratio, "interaction_ratio.csv");
 	}
-	void examination()
-	{
-
-	}
 protected:
 	void writeToFile(const AccuracyData& data, const std::string& filename)
 	{
