@@ -121,9 +121,9 @@ public:
 	{
 		env[manipulate_item].show(output_file);
 	}
-	void interaction(bool isStored = false)
+	void interaction(bool isStored = false, const std::string& order_file = "interaction_orders.csv")
 	{
-		std::ifstream file("interaction_orders.csv");
+		std::ifstream file(order_file);
 		std::string line;
 		std::vector<std::string> lines;
 		while (std::getline(file, line))
@@ -151,7 +151,7 @@ public:
 			size_t query_j = std::stoul(q_j);
 			size_t answer_j = std::stoul(a_j);
 			if (env.find(node_id) != env.end())
-				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j);
+				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j, isStored);
 		}
 	}
 	void statisticConvergence(const std::string& manipulate_item, const std::string& report_filename = "interaction_accuracy.csv")
