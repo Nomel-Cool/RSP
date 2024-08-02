@@ -215,13 +215,13 @@ public:
 	{
 		env[manipulate_item].getR().rollBack();
 	}
-	virtual void examination(size_t max_value, size_t extra_size, const std::string& manipulate_item = "examing")
+	virtual void examination(size_t max_size, size_t max_value, size_t extra_size, const std::string& manipulate_item = "examing")
 	{
 		// 阻塞备份“normal”的交互环境到"examing"
 		env[manipulate_item].copy(env["normal"]);
 
 		// 扩张reality交互环境规模
-		env[manipulate_item].getR().expansion(max_value, extra_size);
+		env[manipulate_item].getR().expansion(max_size, max_value, extra_size);
 
 		// 拷贝所有资源文件到exam版本下
 		for (const auto& entry : std::filesystem::directory_iterator("./"))
@@ -313,7 +313,6 @@ protected:
 		outFile << '\n';
 		outFile.close();
 	}
-
 
 	void copyFile(const std::string& sourceFile, const std::string& destFile)
 	{
