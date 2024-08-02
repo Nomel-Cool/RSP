@@ -74,11 +74,7 @@ public:
 
             // 一定要去重，不然后续很难利用集合计算Pfi
             // 对 m_interactive_instances[i] 进行排序
-            std::sort(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
-
-            // 删除 m_interactive_instances[i] 中的重复元素
-            auto it = std::unique(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
-            m_interactive_instances[i].erase(it, m_interactive_instances[i].end());
+            uniqueElements(i);
 
             sortByExprLen();
         }
@@ -232,6 +228,15 @@ public:
     virtual void pushBackward(size_t key, std::pair<size_t, std::string> value)
     {
         m_interactive_instances[key].emplace_back(value);
+    }
+
+    virtual void uniqueElements(size_t i)
+    {
+        std::sort(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
+
+        // 删除 m_interactive_instances[i] 中的重复元素
+        auto it = std::unique(m_interactive_instances[i].begin(), m_interactive_instances[i].end());
+        m_interactive_instances[i].erase(it, m_interactive_instances[i].end());
     }
 protected: 
     size_t parseAdditionExpr(const std::string& str)
