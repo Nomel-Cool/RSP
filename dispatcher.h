@@ -78,6 +78,10 @@ public:
 	{
 		r.rollBack();
 	}
+	std::vector<std::pair<size_t, size_t>> getAbstractInteraction()
+	{
+		return v.getInteractSequence();
+	}
 	reality<N> getR()
 	{
 		return r;
@@ -259,7 +263,7 @@ public:
 	}
 	virtual std::vector<std::pair<size_t, size_t>> getInteractions(const std::string& manipulate_item)
 	{
-		return env[manipulate_item].getV().getInteractSequence();
+		return env[manipulate_item].getAbstractInteraction();
 	}
 
 protected:
