@@ -211,15 +211,19 @@ public:
         file.close(); // Close the file when done
     }
 
-    virtual void expansion(size_t max_value, size_t extra_size)
+    virtual void expansion(size_t max_size, size_t max_value, size_t extra_size)
     {
         std::default_random_engine generator;
         std::uniform_int_distribution<size_t> distribution(0, max_value);
         size_t n = m_interactive_instances.size();
+        auto rand_size = (rand() % max_size); // Not Empty Set
         for (size_t i = 0; i < extra_size; ++i)
         {
-            size_t rand_value = distribution(generator);
-            m_interactive_instances[n + i].emplace_back(std::make_pair(rand_value, std::to_string(rand_value)));
+            for (size_t j = 0; j < rand_size; ++j)
+            {
+                size_t rand_value = distribution(generator);
+                m_interactive_instances[n + i].emplace_back(std::make_pair(rand_value, std::to_string(rand_value)));
+            }
         }
     }
 
