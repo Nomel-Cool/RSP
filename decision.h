@@ -99,7 +99,7 @@ public:
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
-			processRegression(analyse_result, regression_file);
+			diffprocessRegression(analyse_result, regression_file);
 		}
 		if (is_boundary_converged)
 		{
