@@ -70,6 +70,14 @@ public:
 			}
 		}
 	}
+	void taging()
+	{
+		r.tag();
+	}
+	void recouering()
+	{
+		r.rollBack();
+	}
 	reality<N> getR()
 	{
 		return r;
@@ -224,11 +232,11 @@ public:
 	}
 	virtual void preserver(const std::string& manipulate_item)
 	{
-		env[manipulate_item].getR().tag();
+		env[manipulate_item].taging();
 	}
 	virtual void recover(const std::string& manipulate_item)
 	{
-		env[manipulate_item].getR().rollBack();
+		env[manipulate_item].recouering();
 	}
 	virtual void examination(size_t max_size, size_t max_value, size_t extra_size, const std::string& manipulate_item = "examing")
 	{
