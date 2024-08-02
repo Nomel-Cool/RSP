@@ -60,14 +60,15 @@ public:
 		std::default_random_engine generator;
 		std::uniform_int_distribution<size_t> distribution(0, max_value);
 		size_t n = r.getInstanceSize();
-		auto rand_size = (rand() % max_size); // Not Empty Set
 		for (size_t i = 0; i < extra_size; ++i)
 		{
+			auto rand_size = (rand() % max_size); // Not Empty Set
 			for (size_t j = 0; j < rand_size; ++j)
 			{
 				size_t rand_value = distribution(generator);
 				r.pushBackward(n + i, std::make_pair(rand_value, std::to_string(rand_value)));
 			}
+			r.uniqueElements(n + i);
 		}
 	}
 	void taging()
@@ -193,6 +194,45 @@ public:
 
 		writeToFile(condense_rates, report_filename);
 	}
+	void statisticConvergence(const std::string& manipulate_item, size_t extra_size, const std::string& report_filename = "interaction_accuracy.csv")
+	{
+		AccuracyData condense_rates;
+		reality<N> r = env[manipulate_item].getR();
+
+		/* u -> v */
+		for (size_t u = 0; u < N + extra_size; ++u)
+		{
+			// 求取第u个交互元的层集
+			auto e = r.getDataPairs(u);
+			auto layerSets4e = getLayerSets(e);
+
+			// 考量第v个交互元与第u个交互元交互时
+			for (size_t v = 0; v < N + extra_size; ++v)
+			{
+				if (u == v) continue;
+
+				// 求取第v个交互元的层集
+				auto w = r.getDataPairs(v);
+				auto layerSets4w = getLayerSets(w);
+
+				// 计算平衡度，首先放入压缩信息
+				double balance_degree = calculateBalanceDegree(w);
+				condense_rates[{u, v}].push_back(balance_degree);
+
+				// 计算e的缺损集
+				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
+
+				// 计算e的缺损差值集给寻问元，计算w的缺损差值集给应当元
+				auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
+
+				// 计算认知收敛率
+				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
+				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
+			}
+		}
+
+		writeToFile(condense_rates, report_filename);
+	}
 	void statisticAnswering(const std::string& manipulate_item, const std::string& report_filename = "interaction_answer.csv")
 	{
 		AnswerData answer_rate;
@@ -207,6 +247,41 @@ public:
 
 			// 考量第v个交互元与第u个交互元交互时
 			for (size_t v = 0; v < N; ++v)
+			{
+				if (u == v) continue;
+
+				// 求取第v个交互元的层集
+				auto w = r.getDataPairs(v);
+				auto layerSets4w = getLayerSets(w);
+
+				// 计算e的缺损集
+				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
+
+				// 计算w的缺损差值集给应当元
+				auto DiffLackSets4w = calculateLackDiffSets(LackSets4e, w);
+
+				// 计算认知收敛率
+				auto Rates4w = calculateRates4Answer(DiffLackSets4w, layerSets4w);
+				answer_rate[{u, v}] = Rates4w;
+			}
+		}
+
+		writeToFile(answer_rate, report_filename);
+	}
+	void statisticAnswering(const std::string& manipulate_item, size_t extra_size, const std::string& report_filename = "interaction_answer.csv")
+	{
+		AnswerData answer_rate;
+		reality<N> r = env[manipulate_item].getR();
+
+		/* u -> v */
+		for (size_t u = 0; u < N + extra_size; ++u)
+		{
+			// 求取第u个交互元的层集
+			auto e = r.getDataPairs(u);
+			auto layerSets4e = getLayerSets(e);
+
+			// 考量第v个交互元与第u个交互元交互时
+			for (size_t v = 0; v < N + extra_size; ++v)
 			{
 				if (u == v) continue;
 
