@@ -55,6 +55,21 @@ public:
 		for (auto e : v.getStatus())
 			printf(e.c_str());
 	}
+	void expansion(size_t max_size, size_t max_value, size_t extra_size)
+	{
+		std::default_random_engine generator;
+		std::uniform_int_distribution<size_t> distribution(0, max_value);
+		size_t n = r.getInstanceSize();
+		auto rand_size = (rand() % max_size); // Not Empty Set
+		for (size_t i = 0; i < extra_size; ++i)
+		{
+			for (size_t j = 0; j < rand_size; ++j)
+			{
+				size_t rand_value = distribution(generator);
+				r.pushBackward(n + i, std::make_pair(rand_value, std::to_string(rand_value)));
+			}
+		}
+	}
 	reality<N> getR()
 	{
 		return r;
@@ -221,7 +236,7 @@ public:
 		env[manipulate_item].copy(env["normal"]);
 
 		// 扩张reality交互环境规模
-		env[manipulate_item].getR().expansion(max_size, max_value, extra_size);
+		env[manipulate_item].expansion(max_size, max_value, extra_size);
 
 		// 拷贝所有资源文件到exam版本下
 		for (const auto& entry : std::filesystem::directory_iterator("./"))
