@@ -44,7 +44,7 @@ public:
 		groupId = groupId;
 		binded = binded;
 	}
-	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j, bool isStored = false, size_t extra_size)
+	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j, bool isStored = false, size_t extra_size = 0)
 	{
 		v.interaction(i, j, isStored, extra_size);
 		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
