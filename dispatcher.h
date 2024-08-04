@@ -12,7 +12,7 @@
 #include <string>
 #include <iomanip> //科学计数法精度控制
 
-using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double >>;
+using AccuracyData = std::map<std::pair<size_t, size_t>, std::vector<double>>;
 using AnswerData = std::map<std::pair<size_t, size_t>, std::map<std::pair<size_t, size_t>, std::vector<double>>>;
 /*概要设计
 成员变量：
@@ -176,10 +176,6 @@ public:
 				auto w = r.getDataPairs(v);
 				auto layerSets4w = getLayerSets(w);
 
-				// 计算平衡度，首先放入压缩信息
-				double balance_degree = calculateBalanceDegree(w);
-				condense_rates[{u, v}].push_back(balance_degree);
-
 				// 计算e的缺损集
 				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
@@ -189,6 +185,10 @@ public:
 				// 计算认知收敛率
 				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
 				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
+
+				// 计算平衡度，首先放入压缩信息
+				double balance_degree = calculateBalanceDegree(condense_rates[{u, v}]);
+				condense_rates[{u, v}].insert(condense_rates[{u, v}].begin(), balance_degree);
 			}
 		}
 
@@ -215,10 +215,6 @@ public:
 				auto w = r.getDataPairs(v);
 				auto layerSets4w = getLayerSets(w);
 
-				// 计算平衡度，首先放入压缩信息
-				double balance_degree = calculateBalanceDegree(w);
-				condense_rates[{u, v}].push_back(balance_degree);
-
 				// 计算e的缺损集
 				auto LackSets4e = calculateLackSets(layerSets4e, layerSets4w);
 
@@ -228,6 +224,10 @@ public:
 				// 计算认知收敛率
 				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
 				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
+
+				// 计算平衡度，首先放入压缩信息
+				double balance_degree = calculateBalanceDegree(condense_rates[{u, v}]);
+				condense_rates[{u, v}].insert(condense_rates[{u, v}].begin(), balance_degree);
 			}
 		}
 
@@ -516,30 +516,12 @@ protected:
 		return resultSet;
 	}
 
-	double calculateBalanceDegree(const std::vector<std::pair<size_t, std::string>>& data_pair)
+	double calculateBalanceDegree(const std::vector<double>& accuracy_data)
 	{
-		double expectation = 0.0;
-		for (size_t j = 1; j < data_pair.size(); ++j)
-		{
-			auto it_Ak_begin = std::find_if(data_pair.begin(), data_pair.end(),
-				[j](const std::pair<size_t, std::string>& item)
-				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j - 1;
-				});
-
-			auto it_Ak_end = std::find_if(data_pair.begin(), data_pair.end(),
-				[j](const std::pair<size_t, std::string>& item)
-				{
-					return std::count(item.second.begin(), item.second.end(), '+') == j;
-				});
-			size_t amount_ak = std::distance(it_Ak_begin, it_Ak_end);
-			expectation += (static_cast<double>(j) * static_cast<double>(amount_ak) / static_cast<double>(data_pair.size()));
-
-			// 如果这是最后一个Ak，则停止计算
-			if (it_Ak_end == data_pair.end())
-				break;
-		}
-		return expectation;
+		double total_accuracy = 0.0;
+		for (auto& data : accuracy_data)
+			total_accuracy += data;
+		return total_accuracy / accuracy_data.size();
 	}
 
 	std::vector<std::set<size_t>> getLayerSets(const std::vector<std::pair<size_t, std::string>>& e)
