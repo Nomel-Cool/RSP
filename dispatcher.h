@@ -44,9 +44,9 @@ public:
 		groupId = groupId;
 		binded = binded;
 	}
-	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j, bool isStored = false)
+	void set(size_t i, size_t j, size_t query_i, size_t answer_i, size_t query_j, size_t answer_j, bool isStored = false, size_t extra_size)
 	{
-		v.interaction(i, j, isStored);
+		v.interaction(i, j, isStored, extra_size);
 		r.interaction(i, j, query_i, answer_i, query_j, answer_j);
 	}
 	void show(const std::string& ouput_file = "interaction_output.csv")
@@ -120,7 +120,7 @@ public:
 	{
 		env[manipulate_item].show(output_file);
 	}
-	void interaction(bool isStored = false, const std::string& order_file = "interaction_orders.csv")
+	void interaction(bool isStored = false, const std::string& order_file = "interaction_orders.csv", size_t extra_size = 0)
 	{
 		std::ifstream file(order_file);
 		std::string line;
@@ -150,7 +150,7 @@ public:
 			size_t query_j = std::stoul(q_j);
 			size_t answer_j = std::stoul(a_j);
 			if (env.find(node_id) != env.end())
-				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j, isStored);
+				env[node_id].set(i, j, query_i, answer_i, query_j, answer_j, isStored, extra_size);
 		}
 	}
 	void statisticConvergence(const std::string& manipulate_item, const std::string& report_filename = "interaction_accuracy.csv")

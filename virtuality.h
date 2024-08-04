@@ -56,9 +56,9 @@ public:
 	/// </summary>
 	/// <param name="i"></param>
 	/// <param name="j"></param>
-	virtual void interaction(size_t i, size_t j, bool isStored = false)
+	virtual void interaction(size_t i, size_t j, bool isStored = false, size_t extra_size = 0)
 	{
-		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
+		if (i + 1 > N + extra_size || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N + extra_size)
 			throw;
 		if (isStored)
 			m_stored_makeup_sequence.emplace_back(std::make_pair(i, j));
