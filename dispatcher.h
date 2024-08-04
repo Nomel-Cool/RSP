@@ -66,6 +66,9 @@ public:
 				size_t rand_value = distribution(generator);
 				r.pushBackward(n + i, std::make_pair(rand_value, std::to_string(rand_value)));
 			}
+			// 使满足认知收敛的必要条件
+			r.pushBackward(n + i, std::make_pair(0, "0"));
+			r.pushBackward(n + i, std::make_pair(1, "1"));
 			r.uniqueElements(n + i);
 		}
 	}
