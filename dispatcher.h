@@ -52,8 +52,6 @@ public:
 	void show(const std::string& ouput_file = "interaction_output.csv")
 	{
 		r.show(ouput_file);
-		for (auto e : v.getStatus())
-			printf(e.c_str());
 	}
 	void expansion(size_t max_size, size_t max_value, size_t extra_size)
 	{
