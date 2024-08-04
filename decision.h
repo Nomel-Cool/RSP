@@ -67,7 +67,7 @@ public:
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
-			processRegression(analyse_result, regression_file);
+			//processRegression(analyse_result, regression_file);
 		}
 		if (is_boundary_converged)
 		{
@@ -82,13 +82,14 @@ public:
 		const std::string& order_file,
 		const std::string& ratio_file,
 		const std::string& regression_file,
+		size_t extra_size,
 		size_t exam_i,
 		size_t exam_j)
 	{
 		/* 【Begin】 ******** 处理reality相关反馈 *********/
 		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
 		AnswerData answer_data = readFile4AnswerData(answer_file);
-		auto result = processingarguments(accuracy_data, answer_data, order_file, exam_i, exam_j);
+		auto result = processingarguments(accuracy_data, answer_data, order_file, extra_size, exam_i, exam_j);
 		/* 【Finish】 ******** 处理reality相关反馈 *********/
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
@@ -99,7 +100,7 @@ public:
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
-			processRegression(analyse_result, regression_file);
+			//processRegression(analyse_result, regression_file);
 		}
 		if (is_boundary_converged)
 		{
@@ -287,14 +288,14 @@ protected:
 		}
 	}
 
-	void executePenalty(size_t& _i, size_t& _j)
+	void executePenalty(size_t& _i, size_t& _j, size_t extra_size = 0)
 	{
 		m_penalty_data[{_i, _j}] = 0;
 		m_penalty_data[{_j, _i}] = 0;
-		_i = rand() % max_size;
-		_j = rand() % max_size;
+		_i = rand() % (max_size + extra_size);
+		_j = rand() % (max_size + extra_size);
 		if (_i == _j)
-			_j = (_i + 1) % max_size;
+			_j = (_i + 1) % (max_size + extra_size);
 	}
 
 	SizeT4 processAccuracy(const AccuracyData& accuracy_datas)
@@ -329,7 +330,7 @@ protected:
 	}
 
 	// 为追加试验算法增加的重载
-	SizeT4 processAccuracy(const AccuracyData& accuracy_datas, size_t exam_i, size_t exam_j)
+	SizeT4 processAccuracy(const AccuracyData& accuracy_datas, size_t extra_size, size_t exam_i, size_t exam_j)
 	{
 		size_t _i = exam_i;
 		size_t _j = exam_j;
@@ -337,7 +338,7 @@ protected:
 		// 重复选择多次，添加惩罚，转嫁到随机上
 		bool isPenal = penalty(_i, _j);
 		if (isPenal)
-			executePenalty(_i, _j);
+			executePenalty(_i, _j, extra_size);
 
 		// 挑选最大超验收敛率的组
 		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
@@ -424,9 +425,9 @@ protected:
 	}
 
 	// 重载的交互序列生成函数
-	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file, size_t exam_i, size_t exam_j)
+	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file, size_t extra_size, size_t exam_i, size_t exam_j)
 	{
-		SizeT4 query_info = processAccuracy(accuracy_datas, exam_i, exam_j);
+		SizeT4 query_info = processAccuracy(accuracy_datas, extra_size, exam_i, exam_j);
 
 		SizeT2 answer_info = processAnswer(query_info, answer_datas);
 
