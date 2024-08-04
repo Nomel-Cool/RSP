@@ -447,7 +447,7 @@ protected:
 				if (!layerSets4w[j].empty())
 					rate += static_cast<double>(intersection.size()) / layerSets4w[j].size();
 			}
-			resultSet.push_back(static_cast<double>(rate) / i);
+			resultSet.push_back(rate);
 		}
 
 		for (size_t j = std::min(diffLackSets.size(), layerSets4w.size()); j < diffLackSets.size(); ++j)

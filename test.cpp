@@ -53,6 +53,7 @@ int main()
 		// 满足某个条件时进入测试模式
 		if (!(n--))
 		{
+			n = 20;
 			// 初始化实验环境
 			dispatch.preserver(exam_node);
 			dispatch.examination(12, 5, 1); // max_size, max_value, extra_size
@@ -70,14 +71,14 @@ int main()
 					(std::get<0>(first_interactor) == std::get<2>(feed_back) && std::get<1>(first_interactor) == std::get<1>(feed_back)))
 					counter++;
 				decise.makeOrders(feed_back, exam_node, exam_order_file);
-				dispatch.interaction(true, exam_order_file); // 启动record模式
+				dispatch.interaction(true, exam_order_file, 1); // 启动record模式
 				dispatch.statisticRatio(exam_node, exam_ratio_file);
 				dispatch.show(exam_node, exam_output_file);
 				// system("pause"); // 手动迭代
 
 				Sleep(1000); // 自动迭代
 
-				if (counter == 2)
+				if (counter == 5)
 				{
 					counter = 0;
 					break; // 当出现第2次实验头时，认为达到了平衡标准
@@ -90,21 +91,23 @@ int main()
 			for (size_t m = 1; m < sequences.size(); ++m)
 			{
 				dispatch.preserver(exam_node);
-				for (size_t i = 0; i < m; ++i)
+				for (size_t i = 1; i <= m; ++i)
 				{
 					size_t exam_i = sequences[i].first;
 					size_t exam_j = sequences[i].second;
 					auto feed_back = decise.gainFeedBack(exam_convergency_file, exam_answer_file, exam_order_file, exam_ratio_file, exam_regression_file, exam_i, exam_j);
 					decise.makeOrders(feed_back, exam_node, exam_order_file);
-					dispatch.interaction(); // 取消启动record模式
+					dispatch.interaction(false, exam_order_file, 1); // 取消启动record模式
 					dispatch.show(exam_node, exam_output_file);
+					std::cout << exam_i << "->" << exam_j << "  |  ";
 				}
+				std::cout << '\n';
 				// 执行了前m-1个交互后，检查是否与第m个一致
 				auto check_point = sequences[m];
 				auto feed_back = decise.gainFeedBack(exam_convergency_file, exam_answer_file, exam_order_file, exam_ratio_file, exam_regression_file);
 				if ((check_point.first == std::get<1>(feed_back) && check_point.second == std::get<2>(feed_back)) ||
 					(check_point.first == std::get<2>(feed_back) && check_point.second == std::get<1>(feed_back)))
-					std::cout << "yes" << std::endl;
+					std::cout << '\n' << "yes" << '\n';
 				dispatch.recover(exam_node);
 			}
 			dispatch.recover(exam_node);
