@@ -99,7 +99,7 @@ public:
 		if (position_ratio_data.size() >= 2) // 保证起码能够执行线性回归分析
 		{
 			auto analyse_result = analyseRegression(position_ratio_data);
-			diffprocessRegression(analyse_result, regression_file);
+			processRegression(analyse_result, regression_file);
 		}
 		if (is_boundary_converged)
 		{
@@ -542,7 +542,7 @@ protected:
 			y = std::vector<double>(n, 1);
 		if (n != y.size())
 			throw;
-		float sum = 0.0;
+		double sum = 0.0;
 		for (size_t i = 0; i < n; ++i)
 			sum += x[i] * y[i];
 		return sum;
