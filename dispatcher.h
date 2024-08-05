@@ -106,7 +106,7 @@ private:
 成员函数：
 void bind(int ...) 公有 用于将多个Node组成一个group，它们同步接收交互指令
 */
-template<size_t N, size_t scale, uint32_t max_value, size_t max_size>
+template<size_t N, uint32_t max_value, size_t max_size>
 class dispatcher
 {
 public:
