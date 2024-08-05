@@ -270,7 +270,7 @@ protected:
 	double balanceDegree(std::vector<double> list_a, std::vector<double> list_b)
 	{
 		double result = 0.0;
-		result = (list_a[0] + list_b[0]) * 0.5;
+		result = list_a[0] + list_b[0];
 		return result;
 	}
 
