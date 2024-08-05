@@ -307,7 +307,7 @@ public:
 	void statisticRatio(const std::string& manipulate_item, const std::string& report_filename = "interaction_ratio.csv")
 	{
 		virtuality<N> v = env[manipulate_item].getV();
-		float ratio = v.getRatio();
+		double ratio = v.getRatio();
 		writeToFile(ratio, report_filename);
 	}
 	virtual void preserver(const std::string& manipulate_item)
@@ -409,7 +409,7 @@ protected:
 		outFile.close();
 	}
 
-	void writeToFile(const float ratio, const std::string& filename)
+	void writeToFile(const double ratio, const std::string& filename)
 	{
 		std::ofstream outFile(filename, std::ios::app); // 追加模式
 		outFile << std::scientific << std::setprecision(17) << ratio;  // 使用科学计数法并设置精度为17
