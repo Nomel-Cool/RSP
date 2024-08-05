@@ -95,7 +95,7 @@ int main()
 				{
 					size_t exam_i = sequences[i].first;
 					size_t exam_j = sequences[i].second;
-					auto feed_back = decise.gainFeedBack(exam_convergency_file, exam_answer_file, exam_order_file, exam_ratio_file, exam_regression_file, exam_i, exam_j);
+					auto feed_back = decise.gainFeedBack(exam_convergency_file, exam_answer_file, exam_order_file, exam_ratio_file, exam_regression_file, 1, exam_i, exam_j);
 					decise.makeOrders(feed_back, exam_node, exam_order_file);
 					dispatch.interaction(false, exam_order_file, 1); // 取消启动record模式
 					dispatch.show(exam_node, exam_output_file);

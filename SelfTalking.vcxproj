@@ -107,6 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,10 +140,21 @@
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="clean_csv_contents.bat" />
+    <None Include="exam_file_create.bat" />
     <None Include="interaction_accuracy.csv" />
+    <None Include="interaction_accuracy_exam.csv" />
     <None Include="interaction_answer.csv" />
+    <None Include="interaction_answer_exam.csv" />
     <None Include="interaction_orders.csv" />
+    <None Include="interaction_orders_exam.csv" />
     <None Include="interaction_output.csv" />
+    <None Include="interaction_output_exam.csv" />
+    <None Include="interaction_ratio.csv" />
+    <None Include="interaction_ratio_exam.csv" />
+    <None Include="plotRegression.py" />
+    <None Include="regression_params.csv" />
+    <None Include="regression_params_exam.csv" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

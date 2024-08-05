@@ -184,7 +184,7 @@ public:
 				auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
 
 				// 计算认知收敛率
-				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
+				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w, LackSets4e);
 				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
 
 				// 计算平衡度，首先放入压缩信息
@@ -223,7 +223,7 @@ public:
 				auto DiffLackSets4e = calculateLackDiffSets(LackSets4e, e);
 
 				// 计算认知收敛率
-				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w);
+				auto Rates4e = calculateRates4Query(DiffLackSets4e, layerSets4w, LackSets4e);
 				condense_rates[{u, v}].insert(condense_rates[{u, v}].end(), Rates4e.begin(), Rates4e.end());
 
 				// 计算平衡度，首先放入压缩信息
@@ -424,7 +424,7 @@ protected:
 		dst << src.rdbuf();
 	}
 
-	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w)
+	std::vector<double> calculateRates4Query(const std::vector<std::set<size_t>>& diffLackSets, const std::vector<std::set<size_t>>& layerSets4w, const std::vector<std::set<size_t>>& lackSetSize)
 	{
 		std::vector<double> resultSet;
 
@@ -434,12 +434,11 @@ protected:
 		std::set_intersection(diffLackSets[0].begin(), diffLackSets[0].end(), layerSets4w[0].begin(), layerSets4w[0].end(), std::inserter(intersection, intersection.begin()));
 		if (!layerSets4w[0].empty())
 			rate4first = static_cast<double>(intersection.size()) / layerSets4w[0].size();
-		resultSet.push_back(rate4first);
+		resultSet.push_back(rate4first * lackSetSize[0].size());
 
 		for (size_t i = 1; i < std::min(diffLackSets.size(), layerSets4w.size()); ++i)
 		{
 			double rate = 0.0;
-			size_t times = 0;
 			for (size_t j = 0; j < i; ++j)
 			{
 				// Calculate the intersection of diffLackSets[i] and layerSets4w[j]
@@ -450,7 +449,7 @@ protected:
 				if (!layerSets4w[j].empty())
 					rate += static_cast<double>(intersection.size()) / layerSets4w[j].size();
 			}
-			resultSet.push_back(rate);
+			resultSet.push_back(static_cast<double>(rate) * lackSetSize[i].size());
 		}
 
 		for (size_t j = std::min(diffLackSets.size(), layerSets4w.size()); j < diffLackSets.size(); ++j)
@@ -465,7 +464,7 @@ protected:
 				if (!layerSets4w[k].empty())
 					rate += static_cast<double>(intersection.size()) / layerSets4w[k].size();
 			}
-			resultSet.push_back(static_cast<double>(rate) / j);
+			resultSet.push_back(static_cast<double>(rate) * lackSetSize[j].size());
 		}
 		return resultSet;
 	}
@@ -522,7 +521,7 @@ protected:
 		double total_accuracy = 0.0;
 		for (auto& data : accuracy_data)
 			total_accuracy += data;
-		return total_accuracy / accuracy_data.size();
+		return total_accuracy;
 	}
 
 	std::vector<std::set<size_t>> getLayerSets(const std::vector<std::pair<size_t, std::string>>& e)

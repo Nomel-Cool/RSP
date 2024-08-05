@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="外部脚本">
+      <UniqueIdentifier>{da0e2a97-56ec-4d4e-a66c-65feab538f96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp">
@@ -44,5 +47,38 @@
       <Filter>资源文件</Filter>
     </None>
     <None Include="interaction_answer.csv" />
+    <None Include="interaction_ratio.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="regression_params.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="clean_csv_contents.bat">
+      <Filter>外部脚本</Filter>
+    </None>
+    <None Include="plotRegression.py">
+      <Filter>外部脚本</Filter>
+    </None>
+    <None Include="exam_file_create.bat">
+      <Filter>外部脚本</Filter>
+    </None>
+    <None Include="regression_params_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_ratio_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_output_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_orders_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_answer_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="interaction_accuracy_exam.csv">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
