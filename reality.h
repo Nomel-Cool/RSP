@@ -263,8 +263,8 @@ protected:
                             return std::count(str.begin(), str.end(), '+');
                         };
 
-                    int countA = countPlus(a.second);
-                    int countB = countPlus(b.second);
+                    int64_t countA = countPlus(a.second);
+                    int64_t countB = countPlus(b.second);
 
                     if (countA != countB)
                         return countA < countB; // "+" 的数量不同，按数量排序
@@ -294,6 +294,8 @@ protected:
             std::uniform_int_distribution<> distrib(it_Ak_begin - data_pair.begin(), it_Ak_end - data_pair.begin() - 1);
             return distrib(gen);
         }
+        else
+            throw;
     }
 
     virtual size_t convertIndex4Q(const std::vector<std::pair<size_t, std::string>>& data_pair, size_t index)
@@ -316,6 +318,8 @@ protected:
             std::uniform_int_distribution<> distrib(it_Ak_begin - data_pair.begin(), it_Ak_end - data_pair.begin() - 1);
             return distrib(gen);
         }
+        else
+            throw;
     }
 private:
     // <交互元ID,{<QBag_i,ABag_i>}>
