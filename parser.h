@@ -63,7 +63,7 @@ public:
 		}
 		m_append_test_count = 20;
 	}
-	void ExamModel(
+	std::tuple<std::vector<std::pair<size_t, size_t>>, std::vector<size_t>> ExamModel(
 		const std::string& manipulate_node,
 		const std::string& exam_accuracy_file,
 		const std::string& exam_answer_file,
@@ -135,6 +135,7 @@ public:
 			m_dispatch.recover(manipulate_node);
 		}
 		m_dispatch.recover(manipulate_node);
+		return std::make_tuple(sequences, recur_w);
 	}
 protected:
 	size_t m_append_test_count = 20;
