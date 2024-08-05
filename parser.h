@@ -137,6 +137,22 @@ public:
 		m_dispatch.recover(manipulate_node);
 		return std::make_tuple(sequences, recur_w);
 	}
+	std::map<std::pair<size_t, size_t>, std::vector<std::pair<size_t, size_t>>> classify(std::tuple<std::vector<std::pair<size_t, size_t>>, std::vector<size_t>> raw_datas)
+	{
+		std::map<std::pair<size_t, size_t>, std::vector<std::pair<size_t, size_t>>> classified_syntax_datas;
+		auto sequences = std::get<0>(raw_datas);
+		auto stable_indices = std::get<1>(raw_datas);
+		for (const auto& i : stable_indices)
+		{
+			// 使用std::vector的insert函数插入一个范围
+			classified_syntax_datas[sequences[i]].insert(
+				classified_syntax_datas[sequences[i]].end(), // 插入位置
+				sequences.begin(), sequences.begin() + i - 1 // 插入范围
+			);
+		}
+		return classified_syntax_datas;
+	}
+
 protected:
 	size_t m_append_test_count = 20;
 private:
