@@ -62,7 +62,7 @@ public:
 			throw;
 		if (isStored)
 			m_stored_makeup_sequence.emplace_back(std::make_pair(i, j));
-		double relative_position = getPosition(i + 1, j + 1);
+		double relative_position = static_cast<double>(getPosition(i + 1, j + 1));
 		double grass = (N - 1) * N / 2;
 		double positon_ratio = static_cast<double>(relative_position) / grass;
 		m_current_ratio = positon_ratio;
@@ -78,7 +78,7 @@ public:
 		return m_stored_makeup_sequence;
 	}
 
-	virtual float getRatio()
+	virtual double getRatio()
 	{
 		return m_current_ratio;
 	}
