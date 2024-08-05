@@ -34,7 +34,7 @@ gainFeedback() 公有 用于读取反馈层写入的交互反馈参数文件
 processingarguments() 保护 读取参数文件后调用算法调参生成下一次的交互序列
 makeOrders() 公有 将算法生成的交互序列写入文件，供反馈层读取
 */
-template<size_t max_size>
+template<size_t N>
 class decision
 {
 public:
@@ -292,10 +292,10 @@ protected:
 	{
 		m_penalty_data[{_i, _j}] = 0;
 		m_penalty_data[{_j, _i}] = 0;
-		_i = rand() % (max_size + extra_size);
-		_j = rand() % (max_size + extra_size);
+		_i = rand() % (N + extra_size);
+		_j = rand() % (N + extra_size);
 		if (_i == _j)
-			_j = (_i + 1) % (max_size + extra_size);
+			_j = (_i + 1) % (N + extra_size);
 	}
 
 	SizeT4 processAccuracy(const AccuracyData& accuracy_datas)
