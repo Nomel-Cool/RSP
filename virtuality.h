@@ -20,17 +20,17 @@ getCode() 公有 供反馈层调用获取二进制编码栈
 
 constexpr double SHRINK_RATIO = 1e20;
 
-template<size_t N>
 class virtuality
 {
 public:
-	virtuality()
+	virtuality(size_t N)
 	{
 		m_interactive_elements.resize(N);
 		for (size_t i = 0; i < N; ++i)
 			m_interactive_elements.at(i) = std::to_string(i + 1);
 		m_up_pos = std::make_tuple(0, 1);
 	}
+
 	~virtuality()
 	{
 
@@ -43,10 +43,11 @@ public:
 	/// <param name="j"></param>
 	virtual void _interaction(size_t i, size_t j)
 	{
-		if (i + 1 > N || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N)
+		size_t n = m_interactive_elements.size();
+		if (i + 1 > n || i + 1 <= 0 || j + 1 <= 0 || j + 1 > n)
 			throw;
 		double determined_position = _getPosition(i + 1, j + 1) / SHRINK_RATIO;  // 缩小10^10倍
-		double grass = std::pow((N - 1) * N / 2, std::get<0>(m_up_pos)) / SHRINK_RATIO;  // 缩小10^10倍
+		double grass = std::pow((n - 1) * n / 2, std::get<0>(m_up_pos)) / SHRINK_RATIO;  // 缩小10^10倍
 		double positon_ratio = static_cast<double>(determined_position) / grass;
 		m_current_ratio = positon_ratio;
 	}
@@ -58,14 +59,38 @@ public:
 	/// <param name="j"></param>
 	virtual void interaction(size_t i, size_t j, bool isStored = false, size_t extra_size = 0)
 	{
-		if (i + 1 > N + extra_size || i + 1 <= 0 || j + 1 <= 0 || j + 1 > N + extra_size)
+		size_t n = m_interactive_elements.size();
+		if (i + 1 > n + extra_size || i + 1 <= 0 || j + 1 <= 0 || j + 1 > n + extra_size)
 			throw;
 		if (isStored)
 			m_stored_makeup_sequence.emplace_back(std::make_pair(i, j));
 		double relative_position = static_cast<double>(getPosition(i + 1, j + 1));
-		double grass = (N - 1) * N / 2;
+		double grass = (n - 1) * n / 2;
 		double positon_ratio = static_cast<double>(relative_position) / grass;
 		m_current_ratio = positon_ratio;
+	}
+
+	virtual size_t getInstanceSize()
+	{
+		return m_interactive_elements.size();
+	}
+
+	virtual void tag()
+	{
+		m_interactive_backup.push(m_interactive_elements);
+	}
+
+	virtual void rollBack()
+	{
+		if (m_interactive_backup.empty())
+			return;
+		m_interactive_elements = m_interactive_backup.top();
+		m_interactive_backup.pop();
+	}
+
+	virtual void pushBackward(size_t i)
+	{
+		m_interactive_elements.emplace_back(std::to_string(i));
 	}
 
 	virtual void clearMemory()
@@ -87,20 +112,15 @@ public:
 	{
 		return m_interactive_elements;
 	}
-
-	virtual std::stack<std::bitset<N> > getCode()
-	{
-		return m_coding_status;
-	}
-
 protected:
 	virtual size_t _getPosition(size_t i, size_t j)
 	{
 		if (j < i)
 			std::swap(i, j);
+		size_t n = m_interactive_elements.size();
 		size_t determined_anchor = std::get<1>(m_up_pos);
-		size_t relative_position = (((2 * N - i) * (i - 1)) >> 1) + j - i;
-		size_t determined_position = (determined_anchor - 1) * ((N * (N - 1)) >> 1) + relative_position;
+		size_t relative_position = (((2 * n - i) * (i - 1)) >> 1) + j - i;
+		size_t determined_position = (determined_anchor - 1) * ((n * (n - 1)) >> 1) + relative_position;
 		m_up_pos = std::make_tuple(std::get<0>(m_up_pos) + 1, determined_position);
 		return determined_position;
 	}
@@ -109,7 +129,8 @@ protected:
 	{
 		if (j < i)
 			std::swap(i, j);
-		size_t relative_position = (((2 * N - i) * (i - 1)) >> 1) + j - i;
+		size_t n = m_interactive_elements.size();
+		size_t relative_position = (((2 * n - i) * (i - 1)) >> 1) + j - i;
 		m_up_pos = std::make_tuple(std::get<0>(m_up_pos) + 1, relative_position);
 		return relative_position;
 	}
@@ -124,9 +145,9 @@ protected:
 
 private:
 	std::vector<std::string> m_interactive_elements;
+	std::stack<std::vector<std::string>> m_interactive_backup;
 	std::vector<std::pair<size_t, size_t>> m_stored_makeup_sequence;
 	std::stack<std::pair<size_t, size_t> > m_highlighting_elements;
-	std::stack<std::bitset<N> > m_coding_status;
 	std::tuple<size_t, uint64_t> m_up_pos; // 存储当前形成序的上分位置 <t,pos>
 	double m_current_ratio = 0.0;
 };
