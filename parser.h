@@ -12,11 +12,11 @@
 #include "dispatcher.h"
 #include "decision.h"
 
-template<size_t N, size_t max_size, size_t max_value>
+template<size_t max_size, size_t max_value>
 class abstractParser
 {
 public:
-	abstractParser()
+	abstractParser(size_t N): m_dispatch(N), m_decise(N)
 	{
 
 	}
@@ -76,7 +76,6 @@ public:
 		const std::string& regression_file,
 		const size_t specify_i,
 		const size_t specify_j,
-		size_t expand_extension, // 扩张程度
 		const bool isStored = false,
 		size_t interaction_depth = 1 // 交互深度
 	)
@@ -85,7 +84,7 @@ public:
 		while (interaction_depth--)
 		{
 			// 考察整体平衡度
-			feed_back = m_decise.gainFeedBack(accuracy_file, answer_file, order_file, ratio_file, regression_file, expand_extension, specify_i, specify_j);
+			feed_back = m_decise.gainFeedBack(accuracy_file, answer_file, order_file, ratio_file, regression_file, specify_i, specify_j);
 
 			// 接着制作交互控制
 			m_decise.makeOrders(feed_back, manipulate_node, order_file);
@@ -107,7 +106,7 @@ public:
 		}
 		return feed_back; // 返回最后一次交互后的反馈
 	}
-	std::vector<std::pair<size_t, size_t>> ExamModel(
+	std::vector<std::pair<size_t, size_t>> expandExamModel(
 		const std::string& manipulate_node,
 		const std::string& exam_accuracy_file,
 		const std::string& exam_answer_file,
@@ -121,9 +120,10 @@ public:
 	{
 		// 挂起现场
 		m_dispatch.preserver(manipulate_node);
-		//初始化实验环境
+		// 初始化实验环境
 		m_dispatch.examination(max_size, max_value, extra_size); // max_size, max_value, extra_size
-
+		// 初始化抽象交互环境
+		m_decise.updateCurrentScale(extra_size);
 		std::tuple<size_t, size_t> first_interactor = std::make_tuple(0, 0);
 		int counter = 0;
 		while (true)
@@ -172,6 +172,7 @@ public:
 		const std::string& exam_output_file,
 		const std::string& exam_regression_file)
 	{
+		// 定义稳定形成序
 		std::vector<size_t> recur_w;
 		// 利用模型的收敛倾向，执行抽象形成序
 		for (size_t m = 2; m < sequences.size(); ++m)
@@ -220,7 +221,7 @@ public:
 
 protected:
 private:
-	decision<N> m_decise;
-	dispatcher<N, max_size, max_value> m_dispatch;
+	decision m_decise;
+	dispatcher<max_size, max_value> m_dispatch;
 };
 #endif // !PARSER_H
