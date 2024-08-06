@@ -23,11 +23,12 @@ groupId 表示当前组的id
 set get
 */
 
-template<size_t N, uint32_t max_value, size_t max_size>
+template<size_t max_value, size_t max_size>
 class Node
 {
 public:
-	Node() :r(max_size, max_value)
+	Node() :r(0, 0, 0), v(0) {}
+	Node(size_t N) :r(N, max_size, max_value), v(N)
 	{
 		binded = false;
 		groupId = -1;
@@ -70,15 +71,19 @@ public:
 			r.pushBackward(n + i, std::make_pair(0, "0"));
 			r.pushBackward(n + i, std::make_pair(1, "1"));
 			r.uniqueElements(n + i);
+
+			v.pushBackward(n + i + 1);
 		}
 	}
 	void taging()
 	{
 		r.tag();
+		v.tag();
 	}
 	void recouering()
 	{
 		r.rollBack();
+		v.rollBack();
 	}
 	void cleaning()
 	{
@@ -88,19 +93,19 @@ public:
 	{
 		return v.getInteractSequence();
 	}
-	reality<N> getR()
+	reality getR()
 	{
 		return r;
 	}
-	virtuality<N> getV()
+	virtuality getV()
 	{
 		return v;
 	}
 private:
 	int groupId;
 	bool binded;
-	reality<N> r;
-	virtuality<N> v;
+	reality r;
+	virtuality v;
 };
 
 /*概要设计
@@ -110,14 +115,14 @@ private:
 成员函数：
 void bind(int ...) 公有 用于将多个Node组成一个group，它们同步接收交互指令
 */
-template<size_t N, uint32_t max_value, size_t max_size>
+template<size_t max_value, size_t max_size>
 class dispatcher
 {
 public:
-	dispatcher()
+	dispatcher(size_t N)
 	{
-		env["normal"] = Node<N, max_value, max_size>();
-		env["examing"] = Node<N, max_value, max_size>();
+		env["normal"] = Node<max_value, max_size>(N);
+		env["examing"] = Node<max_value, max_size>(N);
 	}
 	void bind(int groupId, int arg, ...)
 	{
@@ -163,7 +168,8 @@ public:
 	void statisticConvergence(const std::string& manipulate_item, const std::string& report_filename = "interaction_accuracy.csv")
 	{
 		AccuracyData condense_rates;
-		reality<N> r = env[manipulate_item].getR();
+		reality r = env[manipulate_item].getR();
+		size_t N = r.getInstanceSize();
 
 		/* u -> v */
 		for (size_t u = 0; u < N; ++u)
@@ -202,7 +208,8 @@ public:
 	void statisticConvergence(const std::string& manipulate_item, size_t extra_size, const std::string& report_filename = "interaction_accuracy.csv")
 	{
 		AccuracyData condense_rates;
-		reality<N> r = env[manipulate_item].getR();
+		reality r = env[manipulate_item].getR();
+		size_t N = r.getInstanceSize();
 
 		/* u -> v */
 		for (size_t u = 0; u < N + extra_size; ++u)
@@ -241,7 +248,8 @@ public:
 	void statisticAnswering(const std::string& manipulate_item, const std::string& report_filename = "interaction_answer.csv")
 	{
 		AnswerData answer_rate;
-		reality<N> r = env[manipulate_item].getR();
+		reality r = env[manipulate_item].getR();
+		size_t N = r.getInstanceSize();
 
 		/* u -> v */
 		for (size_t u = 0; u < N; ++u)
@@ -276,7 +284,8 @@ public:
 	void statisticAnswering(const std::string& manipulate_item, size_t extra_size, const std::string& report_filename = "interaction_answer.csv")
 	{
 		AnswerData answer_rate;
-		reality<N> r = env[manipulate_item].getR();
+		reality r = env[manipulate_item].getR();
+		size_t N = r.getInstanceSize();
 
 		/* u -> v */
 		for (size_t u = 0; u < N + extra_size; ++u)
@@ -310,7 +319,7 @@ public:
 	}
 	void statisticRatio(const std::string& manipulate_item, const std::string& report_filename = "interaction_ratio.csv")
 	{
-		virtuality<N> v = env[manipulate_item].getV();
+		virtuality v = env[manipulate_item].getV();
 		double ratio = v.getRatio();
 		writeToFile(ratio, report_filename);
 	}
@@ -600,6 +609,6 @@ protected:
 		return resultSets;
 	}
 private:
-	std::map<std::string, Node<N, max_value, max_size> > env; // 更改环境由标签描述取出
+	std::map<std::string, Node<max_value, max_size>> env; // 更改环境由标签描述取出
 };
 #endif // !DISPATCHER_H
