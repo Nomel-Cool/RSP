@@ -207,14 +207,11 @@ public:
 			}
 			m_dispatch.recover(manipulate_node);
 		}
-		std::map<std::pair<size_t, size_t>, std::vector<std::pair<size_t, size_t>>> classified_syntax_datas;
+		std::map<std::pair<size_t, size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>> classified_syntax_datas;
 		for (const auto& i : recur_w)
 		{
-			// 使用std::vector的insert函数插入一个范围
-			classified_syntax_datas[sequences[i]].insert(
-				classified_syntax_datas[sequences[i]].end(), // 插入位置
-				sequences.begin(), sequences.begin() + i - 1 // 插入范围
-			);
+			std::vector<std::pair<size_t, size_t>> section(sequences.begin(), sequences.begin() + i);
+			classified_syntax_datas[sequences[i]].push_back(section);
 		}
 		return classified_syntax_datas;
 	}
