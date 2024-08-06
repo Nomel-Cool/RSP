@@ -34,11 +34,10 @@ gainFeedback() 公有 用于读取反馈层写入的交互反馈参数文件
 processingarguments() 保护 读取参数文件后调用算法调参生成下一次的交互序列
 makeOrders() 公有 将算法生成的交互序列写入文件，供反馈层读取
 */
-template<size_t N>
 class decision
 {
 public:
-	decision()
+	decision(size_t N): m_current_scale(N)
 	{
 
 	}
@@ -82,14 +81,13 @@ public:
 		const std::string& order_file,
 		const std::string& ratio_file,
 		const std::string& regression_file,
-		size_t extra_size,
 		size_t exam_i,
 		size_t exam_j)
 	{
 		/* 【Begin】 ******** 处理reality相关反馈 *********/
 		AccuracyData accuracy_data = readFile4AccuracyData(accuracy_file);
 		AnswerData answer_data = readFile4AnswerData(answer_file);
-		auto result = processingarguments(accuracy_data, answer_data, order_file, extra_size, exam_i, exam_j);
+		auto result = processingarguments(accuracy_data, answer_data, order_file, exam_i, exam_j);
 		/* 【Finish】 ******** 处理reality相关反馈 *********/
 
 		/* 【Begin】 ******** 处理virtuality相关反馈 *********/
@@ -122,8 +120,12 @@ public:
 		outFile.close();
 	}
 
+	// 随时更改当前交互环境的规模
+	virtual void updateCurrentScale(int variable_size)
+	{
+		m_current_scale += variable_size;
+	}
 protected:
-
 	// 计算协方差，使用迫半期望expectation来替代原本的期望
 	double covariance(const std::vector<double>& X, const std::vector<double>& Y, double expectation = 0.5)
 	{
@@ -288,14 +290,14 @@ protected:
 		}
 	}
 
-	void executePenalty(size_t& _i, size_t& _j, size_t extra_size = 0)
+	void executePenalty(size_t& _i, size_t& _j)
 	{
 		m_penalty_data[{_i, _j}] = 0;
 		m_penalty_data[{_j, _i}] = 0;
-		_i = rand() % (N + extra_size);
-		_j = rand() % (N + extra_size);
+		_i = rand() % (m_current_scale);
+		_j = rand() % (m_current_scale);
 		if (_i == _j)
-			_j = (_i + 1) % (N + extra_size);
+			_j = (_i + 1) % (m_current_scale);
 	}
 
 	SizeT4 processAccuracy(const AccuracyData& accuracy_datas)
@@ -330,7 +332,7 @@ protected:
 	}
 
 	// 为追加试验算法增加的重载
-	SizeT4 processAccuracy(const AccuracyData& accuracy_datas, size_t extra_size, size_t exam_i, size_t exam_j)
+	SizeT4 processAccuracy(const AccuracyData& accuracy_datas, size_t exam_i, size_t exam_j)
 	{
 		size_t _i = exam_i;
 		size_t _j = exam_j;
@@ -338,7 +340,7 @@ protected:
 		// 重复选择多次，添加惩罚，转嫁到随机上
 		bool isPenal = penalty(_i, _j);
 		if (isPenal)
-			executePenalty(_i, _j, extra_size);
+			executePenalty(_i, _j);
 
 		// 挑选最大超验收敛率的组
 		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
@@ -425,9 +427,9 @@ protected:
 	}
 
 	// 重载的交互序列生成函数
-	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file, size_t extra_size, size_t exam_i, size_t exam_j)
+	virtual SizeT7 processingarguments(AccuracyData accuracy_datas, AnswerData answer_datas, const std::string& order_file, size_t exam_i, size_t exam_j)
 	{
-		SizeT4 query_info = processAccuracy(accuracy_datas, extra_size, exam_i, exam_j);
+		SizeT4 query_info = processAccuracy(accuracy_datas, exam_i, exam_j);
 
 		SizeT2 answer_info = processAnswer(query_info, answer_datas);
 
@@ -552,6 +554,7 @@ private:
 	std::map<std::pair<size_t, size_t>, size_t> m_penalty_data;
 	std::map<double, size_t> m_ratio_boundary;
 	size_t m_meaning_field_converge = 0;
+	size_t m_current_scale;
 };
 
 #endif // !DECISION_H
