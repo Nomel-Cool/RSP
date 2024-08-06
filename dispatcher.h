@@ -80,6 +80,10 @@ public:
 	{
 		r.rollBack();
 	}
+	void cleaning()
+	{
+		v.clearMemory();
+	}
 	std::vector<std::pair<size_t, size_t>> getAbstractInteraction()
 	{
 		return v.getInteractSequence();
@@ -340,6 +344,10 @@ public:
 	virtual std::vector<std::pair<size_t, size_t>> getInteractions(const std::string& manipulate_item)
 	{
 		return env[manipulate_item].getAbstractInteraction();
+	}
+	virtual void cleanCache(const std::string& manipulate_item)
+	{
+		env[manipulate_item].cleaning();
 	}
 
 protected:
