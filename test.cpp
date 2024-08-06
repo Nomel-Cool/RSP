@@ -18,7 +18,7 @@ int main()
 		exam_ratio_file = "interaction_ratio_exam.csv",
 		exam_output_file = "interaction_output_exam.csv",
 		exam_regression_file = "regression_params_exam.csv";
-	abstractParser<5, 5, 12> parser_factory;
+	abstractParser<5, 12> parser_factory(5);
 	parser_factory.Interaction(
 		normal_node,
 		accuracy_file,
@@ -26,11 +26,13 @@ int main()
 		order_file,
 		ratio_file,
 		output_file,
-		regression_file
+		regression_file,
+		false, // 不记录抽象形成序
+		20 // 交互深度为20
 	);
 
-    // 满足某个条件时进入测试模式
-	auto test_result = parser_factory.ExamModel(
+    // 满足某个条件时进入扩张测试模式
+	auto test_result = parser_factory.expandExamModel(
 		exam_node,
 		exam_accuracy_file,
 		exam_answer_file,
@@ -38,8 +40,18 @@ int main()
 		exam_ratio_file,
 		exam_output_file,
 		exam_regression_file,
-		1
+		1 // 扩张程度为1
 	);
 
+	parser_factory.classify(
+		test_result,
+		exam_node,
+		exam_accuracy_file,
+		exam_answer_file,
+		exam_order_file,
+		exam_ratio_file,
+		exam_output_file,
+		exam_regression_file
+		);
 	return 0;
 }
