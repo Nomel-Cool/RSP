@@ -34,7 +34,6 @@ interaction(i,j) 公有 供网络调度层使用，使得ai与aj进行交互
 show() 公有 展示当前样本空间到Excel表
 
 */
-template<size_t N>
 class reality
 {
 public:
@@ -44,7 +43,7 @@ public:
     /// </summary>
     /// <param name="max_size">Bag的最大容量</param>
     /// <param name="max_value">Bag中的最大数值</param>
-    reality(size_t max_size, size_t max_value)
+    reality(size_t N, size_t max_size, size_t max_value)
     {
         if (max_value == 0 || max_size <= 0)
             return;
