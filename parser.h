@@ -86,6 +86,31 @@ public:
 			db.Add(stable_sequences);
 		}
 	}
+	// 通过对测试环境进一步迭代，获取迭代过程的形成序，并优先后缀对比数据库中已存储的形成序，如果超过某个阈值就认为某个s形成了
+	void Syntacticalization(interaction_param exam_mode)
+	{
+		dbManager db;
+		auto sequences = expandExamModel(
+			exam_mode.manipulate_node,
+			exam_mode.accuracy_file,
+			exam_mode.answer_file,
+			exam_mode.order_file,
+			exam_mode.ratio_file,
+			exam_mode.output_file,
+			exam_mode.regression_file,
+			exam_mode.interaction_scale // 扩张程度为1
+		);
+		for (size_t i = 1; i < sequences.size(); ++i)
+		{
+			auto stable_sequences_set = db.Query(sequences[i]);
+			for (const auto& s : stable_sequences_set)
+			{
+				double satisfiction_rate = suffixComparison(sequences, s.pairs, i - 1);
+				db.Update(satisfiction_rate, s.vector_list_id);
+			}
+		}
+	}
+
 protected:
 	SizeT7 Interaction(
 		const std::string& manipulate_node,
@@ -223,6 +248,7 @@ protected:
 
 		// 还原现场
 		m_dispatch.recover(manipulate_node);
+		m_decise.updateCurrentScale(-1 * extra_size);
 		return sequences;
 	}
 	StableSequencesData lexicalization(
@@ -277,6 +303,20 @@ protected:
 			classified_syntax_datas[sequences[i]].push_back(section);
 		}
 		return classified_syntax_datas;
+	}
+	double suffixComparison(std::vector<std::pair<size_t, size_t>> raw_sequence, std::vector<std::pair<size_t, size_t>> stable_sequence, size_t anchor_indice)
+	{
+		size_t match_length = 0;
+		size_t stable_length = stable_sequence.size();
+
+		// 从 anchor_indice 开始向前遍历 raw_sequence
+		for (size_t i = anchor_indice, j = stable_length - 1; i >= 0 && j >= 0; --i, --j)
+			if ((raw_sequence[i].first == stable_sequence[j].first && raw_sequence[i].second == stable_sequence[j].second)
+				|| (raw_sequence[i].first == stable_sequence[j].second && raw_sequence[i].second == stable_sequence[j].first))
+				++match_length;
+			else
+				break;
+		return static_cast<double>(match_length) / stable_length;
 	}
 
 private:
