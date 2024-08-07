@@ -310,7 +310,7 @@ protected:
 		size_t stable_length = stable_sequence.size();
 
 		// 从 anchor_indice 开始向前遍历 raw_sequence
-		for (size_t i = anchor_indice, j = stable_length - 1; i >= 0 && j >= 0; --i, --j)
+		for (size_t i = anchor_indice, j = stable_length - 1; i != SIZE_MAX && j != SIZE_MAX; --i, --j)
 			if ((raw_sequence[i].first == stable_sequence[j].first && raw_sequence[i].second == stable_sequence[j].second)
 				|| (raw_sequence[i].first == stable_sequence[j].second && raw_sequence[i].second == stable_sequence[j].first))
 				++match_length;
