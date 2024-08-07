@@ -12,6 +12,24 @@
 #include "dispatcher.h"
 #include "decision.h"
 
+using StableSequencesData = std::map<std::pair<size_t, size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>>;
+
+struct interaction_param
+{
+		std::string& manipulate_node;
+		std::string& accuracy_file;
+		std::string& answer_file;
+		std::string& order_file;
+		std::string& ratio_file;
+		std::string& output_file;
+		std::string& regression_file;
+		bool isStored;
+		size_t interaction_depth; // 交互深度
+		size_t interaction_scale; // 交互规模
+		size_t specify_i;
+		size_t specify_j;
+};
+
 template<size_t max_size, size_t max_value>
 class abstractParser
 {
@@ -24,6 +42,51 @@ public:
 	{
 
 	}
+	std::vector<StableSequencesData> SelfIteration(interaction_param noraml_mode, interaction_param exam_mode, size_t iterate_times = 1)
+	{
+		std::vector<StableSequencesData> resultant_sequences;
+		// ->  原生模型交互深度增加  --->  一阶追加测试  --->  稳定形成序分类存储 --
+		while (iterate_times--)
+		{
+			Interaction(
+				noraml_mode.manipulate_node,
+				noraml_mode.accuracy_file,
+				noraml_mode.answer_file,
+				noraml_mode.order_file,
+				noraml_mode.ratio_file,
+				noraml_mode.output_file,
+				noraml_mode.regression_file,
+				noraml_mode.isStored, // 不记录抽象形成序
+				noraml_mode.interaction_depth // 交互深度为20
+			);
+
+			// 满足某个条件时进入扩张测试模式
+			auto test_result = expandExamModel(
+				exam_mode.manipulate_node,
+				exam_mode.accuracy_file,
+				exam_mode.answer_file,
+				exam_mode.order_file,
+				exam_mode.ratio_file,
+				exam_mode.output_file,
+				exam_mode.regression_file,
+				exam_mode.interaction_scale // 扩张程度为1
+			);
+
+			auto stable_sequences = lexicalization(
+				test_result,
+				exam_mode.manipulate_node,
+				exam_mode.accuracy_file,
+				exam_mode.answer_file,
+				exam_mode.order_file,
+				exam_mode.ratio_file,
+				exam_mode.output_file,
+				exam_mode.regression_file
+			);
+			resultant_sequences.emplace_back(stable_sequences);
+		}
+		return resultant_sequences;
+	}
+protected:
 	SizeT7 Interaction(
 		const std::string& manipulate_node,
 		const std::string& accuracy_file,
@@ -162,7 +225,7 @@ public:
 		m_dispatch.recover(manipulate_node);
 		return sequences;
 	}
-	std::map<std::pair<size_t, size_t>, std::vector<std::pair<size_t, size_t>>> classify(
+	StableSequencesData lexicalization(
 		const std::vector<std::pair<size_t, size_t>>& sequences,
 		const std::string& manipulate_node,
 		const std::string& exam_accuracy_file,
@@ -216,7 +279,6 @@ public:
 		return classified_syntax_datas;
 	}
 
-protected:
 private:
 	decision m_decise;
 	dispatcher<max_size, max_value> m_dispatch;
