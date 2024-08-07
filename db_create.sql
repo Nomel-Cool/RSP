@@ -9,6 +9,7 @@ CREATE TABLE VectorList (
     id INT AUTO_INCREMENT PRIMARY KEY,
     main_map_id INT NOT NULL,
     vector_index INT NOT NULL,
+    satisfiction_rate DOUBLE,
     FOREIGN KEY (main_map_id) REFERENCES MainMap(id)
 );
 CREATE TABLE PairList (
