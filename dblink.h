@@ -5,10 +5,13 @@
 #include <map>
 #include <vector>
 #include <mysql.h>
-#include <stdexcept>
-#include <string>
 
 using StableSequencesData = std::map<std::pair<size_t, size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>>;
+
+struct VectorData {
+    int vector_list_id;
+    std::vector<std::pair<size_t, size_t>> pairs;
+};
 
 class dbManager
 {
@@ -65,9 +68,9 @@ public:
     }
 
     // ²é
-    std::vector<std::vector<std::pair<size_t, size_t>>> Query(std::pair<size_t, size_t> key)
+    std::vector<VectorData> Query(std::pair<size_t, size_t> key)
     {
-        std::vector<std::vector<std::pair<size_t, size_t>>> result;
+        std::vector<VectorData> result;
 
         std::string queryMainMap = "SELECT id FROM MainMap WHERE (key1 = " + std::to_string(key.first) + " AND key2 = " + std::to_string(key.second) + ") OR (key1 = " + std::to_string(key.second) + " AND key2 = " + std::to_string(key.first) + ")";
         if (mysql_query(conn, queryMainMap.c_str())) {
@@ -102,9 +105,8 @@ public:
             int vectorListId = std::stoi(row[0]);
             int vectorIndex = std::stoi(row[1]);
 
-            if (result.size() <= vectorIndex) {
-                result.resize(vectorIndex + 1);
-            }
+            VectorData vectorData;
+            vectorData.vector_list_id = vectorListId;
 
             std::string queryPairList = "SELECT pair1, pair2 FROM PairList WHERE vector_list_id = " + std::to_string(vectorListId);
             if (mysql_query(conn, queryPairList.c_str())) {
@@ -118,14 +120,24 @@ public:
 
             MYSQL_ROW pairRow;
             while ((pairRow = mysql_fetch_row(pairRes)) != nullptr) {
-                result[vectorIndex].emplace_back(std::stoi(pairRow[0]), std::stoi(pairRow[1]));
+                vectorData.pairs.emplace_back(std::stoi(pairRow[0]), std::stoi(pairRow[1]));
             }
 
             mysql_free_result(pairRes);
+            result.push_back(vectorData);
         }
 
         mysql_free_result(res);
         return result;
+    }
+
+    // ¸Ä
+    void Update(double satisfiction_rate, int vector_list_id)
+    {
+        std::string updateVectorList = "UPDATE VectorList SET satisfiction_rate = " + std::to_string(satisfiction_rate) + " WHERE id = " + std::to_string(vector_list_id);
+        if (mysql_query(conn, updateVectorList.c_str())) {
+            throw std::runtime_error("UPDATE VectorList failed");
+        }
     }
 
 protected:
