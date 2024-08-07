@@ -11,6 +11,7 @@
 
 #include "dispatcher.h"
 #include "decision.h"
+#include "dblink.h"
 
 using StableSequencesData = std::map<std::pair<size_t, size_t>, std::vector<std::vector<std::pair<size_t, size_t>>>>;
 
@@ -42,9 +43,9 @@ public:
 	{
 
 	}
-	std::vector<StableSequencesData> SelfIteration(interaction_param noraml_mode, interaction_param exam_mode, size_t iterate_times = 1)
+	void SelfIteration(interaction_param noraml_mode, interaction_param exam_mode, size_t iterate_times = 1)
 	{
-		std::vector<StableSequencesData> resultant_sequences;
+		dbManager db;
 		// ->  原生模型交互深度增加  --->  一阶追加测试  --->  稳定形成序分类存储 --
 		while (iterate_times--)
 		{
@@ -82,9 +83,8 @@ public:
 				exam_mode.output_file,
 				exam_mode.regression_file
 			);
-			resultant_sequences.emplace_back(stable_sequences);
+			db.Add(stable_sequences);
 		}
-		return resultant_sequences;
 	}
 protected:
 	SizeT7 Interaction(
@@ -283,4 +283,4 @@ private:
 	decision m_decise;
 	dispatcher<max_size, max_value> m_dispatch;
 };
-#endif // !PARSER_H
+#endif //!PARSER_H
