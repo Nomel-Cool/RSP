@@ -141,7 +141,7 @@ public:
 
             MYSQL_ROW pairRow;
             while ((pairRow = mysql_fetch_row(pairRes)) != nullptr) {
-                vectorData.pairs.emplace_back(std::stoi(pairRow[0]), std::to_string(pairRow[1]));
+                vectorData.pairs.emplace_back(std::stoi(pairRow[0]), std::stoi(pairRow[1]));
             }
 
             mysql_free_result(pairRes);
