@@ -1,5 +1,4 @@
 #include "parser.h"
-#include "dblink.h"
 using namespace std;
 
 int main()
@@ -50,10 +49,11 @@ int main()
         0,
         0
     };
-
-    auto stable_sequences = parser_factory.SelfIteration(normal_mode, exam_mode);
-    for (auto s : stable_sequences)
-        db.Add(s);
-
+    int n = 3;
+    while (n--)
+    {
+        parser_factory.SelfIteration(normal_mode, exam_mode);
+        parser_factory.Syntacticalization(exam_mode);
+    }
     return 0;
 }
