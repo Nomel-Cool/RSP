@@ -54,26 +54,47 @@ public:
 	{
 		r.show(ouput_file);
 	}
-	void expansion(size_t max_size, size_t max_value, size_t extra_size)
+	void expansion(size_t max_size, size_t max_value, size_t extra_size, std::vector<std::vector<size_t>>& expand_nodes)
 	{
-		std::default_random_engine generator;
-		std::uniform_int_distribution<size_t> distribution(0, max_value);
 		size_t n = r.getInstanceSize();
-		for (size_t i = 0; i < extra_size; ++i)
+		// 如果指定的扩张交互元序列为空，则按照extra_size随机生成，否则按照指定扩张交互元序列填入
+		if (expand_nodes.empty())
 		{
-			auto rand_size = (rand() % max_size); // Not Empty Set
-			for (size_t j = 0; j < rand_size; ++j)
+			std::default_random_engine generator;
+			std::uniform_int_distribution<size_t> distribution(0, max_value);
+			std::vector<size_t> expand_node;
+			for (size_t i = 0; i < extra_size; ++i)
 			{
-				size_t rand_value = distribution(generator);
-				r.pushBackward(n + i, std::make_pair(rand_value, std::to_string(rand_value)));
-			}
-			// 使满足认知收敛的必要条件
-			r.pushBackward(n + i, std::make_pair(0, "0"));
-			r.pushBackward(n + i, std::make_pair(1, "1"));
-			r.uniqueElements(n + i);
+				auto rand_size = (rand() % max_size); // Not Empty Set
+				for (size_t j = 0; j < rand_size; ++j)
+				{
+					size_t rand_value = distribution(generator);
+					r.pushBackward(n + i, std::make_pair(rand_value, std::to_string(rand_value)));
+					expand_node.emplace_back(rand_value);
+				}
+				// 使满足认知收敛的必要条件
+				r.pushBackward(n + i, std::make_pair(0, "0"));
+				r.pushBackward(n + i, std::make_pair(1, "1"));
+				r.uniqueElements(n + i);
 
-			v.pushBackward(n + i + 1);
+				v.pushBackward(n + i + 1);
+
+				// 保存随机生成的扩张交互元序列，如果仍然使用该引用，则会跳转到else重复使用，保证每次扩张都是一样的
+				expand_nodes.emplace_back(expand_node);
+			}
 		}
+		else
+			for (size_t i = 0; i < extra_size; ++i)
+			{
+				for (size_t j = 0; j < expand_nodes[i].size(); ++j)
+					r.pushBackward(n + i, std::make_pair(expand_nodes[i][j], std::to_string(expand_nodes[i][j])));
+				// 使满足认知收敛的必要条件
+				r.pushBackward(n + i, std::make_pair(0, "0"));
+				r.pushBackward(n + i, std::make_pair(1, "1"));
+				r.uniqueElements(n + i);
+
+				v.pushBackward(n + i + 1);
+			}
 	}
 	void taging()
 	{
@@ -331,13 +352,13 @@ public:
 	{
 		env[manipulate_item].recouering();
 	}
-	virtual void examination(size_t max_size, size_t max_value, size_t extra_size, const std::string& manipulate_item = "examing")
+	virtual void examination(size_t max_size, size_t max_value, size_t extra_size, std::vector<std::vector<size_t>>& expand_nodes, const std::string& manipulate_item = "examing")
 	{
 		// 阻塞备份“normal”的交互环境到"examing"
 		env[manipulate_item].copy(env["normal"]);
 
 		// 扩张reality交互环境规模
-		env[manipulate_item].expansion(max_size, max_value, extra_size);
+		env[manipulate_item].expansion(max_size, max_value, extra_size, expand_nodes);
 
 		// 拷贝所有资源文件到exam版本下
 		for (const auto& entry : std::filesystem::directory_iterator("./"))
