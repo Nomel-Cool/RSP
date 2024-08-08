@@ -17,18 +17,19 @@ using StableSequencesData = std::map<std::pair<size_t, size_t>, std::vector<std:
 
 struct interaction_param
 {
-		std::string& manipulate_node;
-		std::string& accuracy_file;
-		std::string& answer_file;
-		std::string& order_file;
-		std::string& ratio_file;
-		std::string& output_file;
-		std::string& regression_file;
-		bool isStored;
-		size_t interaction_depth; // 交互深度
-		size_t interaction_scale; // 交互规模
-		size_t specify_i;
-		size_t specify_j;
+	std::string& manipulate_node;
+	std::string& accuracy_file;
+	std::string& answer_file;
+	std::string& order_file;
+	std::string& ratio_file;
+	std::string& output_file;
+	std::string& regression_file;
+	bool isStored;
+	size_t interaction_depth; // 交互深度
+	size_t interaction_scale; // 交互规模
+	size_t specify_i;
+	size_t specify_j;
+	std::vector<std::vector<size_t>> expand_nodes;
 };
 
 template<size_t max_size, size_t max_value>
@@ -43,7 +44,7 @@ public:
 	{
 
 	}
-	void SelfIteration(interaction_param noraml_mode, interaction_param exam_mode, size_t iterate_times = 1)
+	void SelfIteration(interaction_param &noraml_mode, interaction_param &exam_mode, size_t iterate_times = 1)
 	{
 		dbManager db;
 		// ->  原生模型交互深度增加  --->  一阶追加测试  --->  稳定形成序分类存储 --
@@ -70,7 +71,8 @@ public:
 				exam_mode.ratio_file,
 				exam_mode.output_file,
 				exam_mode.regression_file,
-				exam_mode.interaction_scale // 扩张程度为1
+				exam_mode.interaction_scale, // 扩张程度为1
+				exam_mode.expand_nodes
 			);
 
 			auto stable_sequences = lexicalization(
@@ -98,7 +100,8 @@ public:
 			exam_mode.ratio_file,
 			exam_mode.output_file,
 			exam_mode.regression_file,
-			exam_mode.interaction_scale // 扩张程度为1
+			exam_mode.interaction_scale, // 扩张程度为1
+			exam_mode.expand_nodes
 		);
 		for (size_t i = 1; i < sequences.size(); ++i)
 		{
@@ -106,10 +109,11 @@ public:
 			for (const auto& s : stable_sequences_set)
 			{
 				double satisfiction_rate = suffixComparison(sequences, s.pairs, i - 1);
-				db.Update(satisfiction_rate, s.vector_list_id);
+				db.Update(satisfiction_rate, s.main_map_id, s.vector_index);
 			}
 		}
 	}
+
 
 protected:
 	SizeT7 Interaction(
@@ -141,10 +145,10 @@ protected:
 			m_dispatch.interaction(isStored, order_file);
 
 			// 生成位置占比数据
-			m_dispatch.statisticRatio(manipulate_node, ratio_file);
+			//m_dispatch.statisticRatio(manipulate_node, ratio_file);
 
 			// 展示交互结果
-			m_dispatch.show(manipulate_node, output_file);
+			//m_dispatch.show(manipulate_node, output_file);
 
 			//手动迭代
 			//system("pause");
@@ -181,10 +185,10 @@ protected:
 			m_dispatch.interaction(isStored, order_file);
 
 			// 生成位置占比数据
-			m_dispatch.statisticRatio(manipulate_node, ratio_file);
+			//m_dispatch.statisticRatio(manipulate_node, ratio_file);
 
 			// 展示交互结果
-			m_dispatch.show(manipulate_node, output_file);
+			//m_dispatch.show(manipulate_node, output_file);
 
 			//手动迭代
 			//system("pause");
@@ -203,15 +207,16 @@ protected:
 		const std::string& exam_output_file,
 		const std::string& exam_regression_file,
 		const size_t& extra_size,
+		std::vector<std::vector<size_t>>& expand_nodes,
 		const size_t& convergence_limit = 5
 	)
 	{
 		// 挂起现场
 		m_dispatch.preserver(manipulate_node);
 		// 初始化实验环境
-		m_dispatch.examination(max_size, max_value, extra_size); // max_size, max_value, extra_size
+		m_dispatch.examination(max_size, max_value, extra_size, expand_nodes); // max_size, max_value, extra_size
 		// 初始化抽象交互环境
-		m_decise.updateCurrentScale(extra_size);
+		m_decise.updateCurrentScale(expand_nodes.empty() ? extra_size : expand_nodes.size());
 		std::tuple<size_t, size_t> first_interactor = std::make_tuple(0, 0);
 		int counter = 0;
 		while (true)
@@ -248,7 +253,7 @@ protected:
 
 		// 还原现场
 		m_dispatch.recover(manipulate_node);
-		m_decise.updateCurrentScale(-1 * extra_size);
+		m_decise.updateCurrentScale(expand_nodes.empty() ? -1 * extra_size : -1 * expand_nodes.size());
 		return sequences;
 	}
 	StableSequencesData lexicalization(
