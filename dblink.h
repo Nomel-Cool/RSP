@@ -10,6 +10,8 @@ using StableSequencesData = std::map<std::pair<size_t, size_t>, std::vector<std:
 
 struct VectorData {
     int vector_list_id;
+    int vector_index;
+    int main_map_id;
     std::vector<std::pair<size_t, size_t>> pairs;
 };
 
@@ -128,6 +130,8 @@ public:
 
             VectorData vectorData;
             vectorData.vector_list_id = vectorListId;
+            vectorData.main_map_id = mainMapId;
+            vectorData.vector_index = vectorIndex;
 
             std::string queryPairList = "SELECT pair1, pair2 FROM PairList WHERE vector_list_id = " + std::to_string(vectorListId);
             if (mysql_query(conn, queryPairList.c_str())) {
@@ -152,14 +156,39 @@ public:
         return result;
     }
 
+
     // 改
-    void Update(double satisfiction_rate, int vector_list_id)
+    void Update(double satisfiction_rate, int main_map_id, int vector_index)
     {
-        std::string updateVectorList = "UPDATE VectorList SET satisfiction_rate = " + std::to_string(satisfiction_rate) + " WHERE id = " + std::to_string(vector_list_id);
-        if (mysql_query(conn, updateVectorList.c_str())) {
-            throw std::runtime_error("UPDATE VectorList failed");
+        // 查询当前的 satisfiction_rate
+        std::string queryCurrentRate = "SELECT satisfiction_rate FROM VectorList WHERE main_map_id = " + std::to_string(main_map_id) + " AND vector_index = " + std::to_string(vector_index);
+        if (mysql_query(conn, queryCurrentRate.c_str())) {
+            throw std::runtime_error("SELECT FROM VectorList failed");
+        }
+
+        MYSQL_RES* res = mysql_store_result(conn);
+        if (res == nullptr) {
+            throw std::runtime_error("mysql_store_result() failed");
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(res);
+        if (row == nullptr) {
+            mysql_free_result(res);
+            throw std::runtime_error("No data found in VectorList");
+        }
+
+        double currentRate = std::stod(row[0]);
+        mysql_free_result(res);
+
+        // 只有当新值大于当前值时才更新
+        if (satisfiction_rate > currentRate) {
+            std::string updateVectorList = "UPDATE VectorList SET satisfiction_rate = " + std::to_string(satisfiction_rate) + " WHERE main_map_id = " + std::to_string(main_map_id) + " AND vector_index = " + std::to_string(vector_index);
+            if (mysql_query(conn, updateVectorList.c_str())) {
+                throw std::runtime_error("UPDATE VectorList failed");
+            }
         }
     }
+
 
 protected:
 
