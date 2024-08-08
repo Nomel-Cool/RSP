@@ -80,6 +80,8 @@ public:
 				v.pushBackward(n + i + 1);
 
 				// 保存随机生成的扩张交互元序列，如果仍然使用该引用，则会跳转到else重复使用，保证每次扩张都是一样的
+				expand_node.emplace_back(0);
+				expand_node.emplace_back(1);
 				expand_nodes.emplace_back(expand_node);
 			}
 		}
