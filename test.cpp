@@ -32,7 +32,8 @@ int main()
         20, // 交互深度
         0, // 交互规模
         0,
-        0
+        0,
+        std::vector<std::vector<size_t>>()
     };
     interaction_param exam_mode =
     {
@@ -47,13 +48,15 @@ int main()
         1, // 交互深度
         1, // 交互规模
         0,
-        0
+        0,
+        std::vector<std::vector<size_t>>()
     };
-    int n = 3;
+    int n = 2;
     while (n--)
     {
-        parser_factory.SelfIteration(normal_mode, exam_mode);
+        parser_factory.SelfIteration(normal_mode, exam_mode, 3);
         parser_factory.Syntacticalization(exam_mode);
+        exam_mode.expand_nodes.clear(); // 重新构造新的执行扩张交互元
     }
     return 0;
 }
