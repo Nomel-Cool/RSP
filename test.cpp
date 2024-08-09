@@ -45,7 +45,7 @@ int main()
         exam_output_file,
         exam_regression_file,
         true,
-        20, // 交互深度
+        80, // 交互深度
         1, // 交互规模
         0,
         0,
@@ -63,6 +63,7 @@ int main()
 
     /* 形成序对比实验 */
     int m = 1;
+    exam_mode.expand_nodes.push_back({0,1,5});
     while (m--)
     {
         auto explicit_sequences = parser_factory.CollectRawSequences(exam_mode, 3);
@@ -72,6 +73,7 @@ int main()
         {
             for (const auto& pairs : p.second)
             {
+                if (pairs.size() == 1)continue;
                 for (const auto& p : pairs)
                 {
                     std::cout << "<" << p.first << "," << p.second << "> ";
