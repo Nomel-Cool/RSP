@@ -155,8 +155,14 @@ public:
 						if (other_sample_id == sample_id) continue;
 						bool found = false;
 						for (size_t other_start = 0; other_start + length <= simplified_sequences[other_sample_id].size(); ++other_start) {
-							if (std::equal(simplified_sequences[sample_id].begin() + start, simplified_sequences[sample_id].begin() + start + length,
-								simplified_sequences[other_sample_id].begin() + other_start)) {
+							bool match = true;
+							for (size_t k = 0; k < length; ++k) {
+								if (!arePairsEqual(simplified_sequences[sample_id][start + k], simplified_sequences[other_sample_id][other_start + k])) {
+									match = false;
+									break;
+								}
+							}
+							if (match) {
 								found = true;
 								break;
 							}
@@ -177,8 +183,7 @@ public:
 		}
 
 		return dp;
-	}
-	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
+	}	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
 	{
 		std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> return_map;
 
@@ -437,7 +442,10 @@ protected:
 
 		return result;
 	}
-
+	bool arePairsEqual(const std::pair<size_t, size_t>& p1, const std::pair<size_t, size_t>& p2)
+	{
+		return (p1.first == p2.first && p1.second == p2.second) || (p1.first == p2.second && p1.second == p2.first);
+	}
 private:
 	decision m_decise;
 	dispatcher<max_size, max_value> m_dispatch;
