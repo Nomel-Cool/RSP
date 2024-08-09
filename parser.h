@@ -44,9 +44,8 @@ public:
 	{
 
 	}
-	void SelfIteration(interaction_param &noraml_mode, interaction_param &exam_mode, size_t iterate_times = 1)
+	void SelfIteration(dbManager& db, interaction_param &noraml_mode, interaction_param &exam_mode, size_t iterate_times = 1)
 	{
-		dbManager db;
 		// ->  原生模型交互深度增加  --->  一阶追加测试  --->  稳定形成序分类存储 --
 		while (iterate_times--)
 		{
@@ -63,7 +62,7 @@ public:
 			);
 
 			// 满足某个条件时进入扩张测试模式
-			auto test_result = expandExamModel(
+			auto resultant_sequences = expandExamModel(
 				exam_mode.manipulate_node,
 				exam_mode.accuracy_file,
 				exam_mode.answer_file,
@@ -76,7 +75,7 @@ public:
 			);
 
 			auto stable_sequences = lexicalization(
-				test_result,
+				resultant_sequences,
 				exam_mode.manipulate_node,
 				exam_mode.accuracy_file,
 				exam_mode.answer_file,
