@@ -140,81 +140,37 @@ public:
 		}
 		return explicit_sequences;
 	}
-#include <vector>
-#include <utility>
-#include <unordered_map>
-#include <algorithm>
-
-	std::vector<std::vector<std::vector<bool>>> FindPattern(const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences) {
+	std::vector<std::vector<std::vector<bool>>> FindPattern(std::vector<std::vector<std::pair<size_t, size_t>>> simplified_sequences) {
 		size_t num_samples = simplified_sequences.size();
-		std::vector<std::vector<std::vector<bool>>> dp;
+		std::vector<std::vector<std::vector<bool>>> dp(num_samples);
 
-		// Initialize dp array based on the actual length of each sequence
-		for (const auto& seq : simplified_sequences) {
-			size_t length = seq.size();
-			dp.push_back(std::vector<std::vector<bool>>(length, std::vector<bool>(length + 1, false)));
-		}
+		for (size_t sample_id = 0; sample_id < num_samples; ++sample_id) {
+			size_t sequence_length = simplified_sequences[sample_id].size();
+			dp[sample_id] = std::vector<std::vector<bool>>(sequence_length, std::vector<bool>(sequence_length + 1, false));
 
-		// Create a hash map to store the substrings of the first sequence
-		std::unordered_map<std::string, size_t> substr_map;
-		for (size_t start = 0; start < simplified_sequences[0].size(); ++start) {
-			for (size_t length = 1; length <= simplified_sequences[0].size() - start; ++length) {
-				std::string key;
-				for (size_t k = 0; k < length; ++k) {
-					auto p = simplified_sequences[0][start + k];
-					if (p.first > p.second) std::swap(p.first, p.second);
-					key += std::to_string(p.first) + "," + std::to_string(p.second) + ";";
-				}
-				substr_map[key] = length;
-			}
-		}
-
-		// Check for common substrings in all sequences
-		for (size_t length = 1; length <= simplified_sequences[0].size(); ++length) {
-			for (size_t start = 0; start <= simplified_sequences[0].size() - length; ++start) {
-				std::string key;
-				for (size_t k = 0; k < length; ++k) {
-					auto p = simplified_sequences[0][start + k];
-					if (p.first > p.second) std::swap(p.first, p.second);
-					key += std::to_string(p.first) + "," + std::to_string(p.second) + ";";
-				}
-
-				bool common = true;
-				for (size_t i = 1; i < num_samples; ++i) {
-					bool match = false;
-					for (size_t j = 0; j <= simplified_sequences[i].size() - length; ++j) {
-						std::string current_key;
-						for (size_t k = 0; k < length; ++k) {
-							if (j + k < simplified_sequences[i].size()) {
-								auto p = simplified_sequences[i][j + k];
-								if (p.first > p.second) std::swap(p.first, p.second);
-								current_key += std::to_string(p.first) + "," + std::to_string(p.second) + ";";
+			for (size_t start = 0; start < sequence_length; ++start) {
+				for (size_t length = 1; start + length <= sequence_length; ++length) {
+					bool is_common = true;
+					for (size_t other_sample_id = 0; other_sample_id < num_samples; ++other_sample_id) {
+						if (other_sample_id == sample_id) continue;
+						bool found = false;
+						for (size_t other_start = 0; other_start + length <= simplified_sequences[other_sample_id].size(); ++other_start) {
+							if (std::equal(simplified_sequences[sample_id].begin() + start, simplified_sequences[sample_id].begin() + start + length,
+								simplified_sequences[other_sample_id].begin() + other_start)) {
+								found = true;
+								break;
 							}
 						}
-						if (current_key == key) {
-							match = true;
+						if (!found) {
+							is_common = false;
 							break;
 						}
 					}
-					if (!match) {
-						common = false;
-						break;
-					}
-				}
-
-				if (common) {
-					for (size_t i = 0; i < num_samples; ++i) {
-						if (start < dp[i].size() && length <= dp[i][start].size()) {
-							dp[i][start][length] = true;
+					if (is_common) {
+						for (size_t l = 1; l <= length; ++l) {
+							dp[sample_id][start][l] = false;
 						}
-					}
-					// Set shorter lengths to false for all samples
-					for (size_t i = 0; i < num_samples; ++i) {
-						for (size_t len = 1; len < length; ++len) {
-							if (start < dp[i].size() && len <= dp[i][start].size()) {
-								dp[i][start][len] = false;
-							}
-						}
+						dp[sample_id][start][length] = true;
 					}
 				}
 			}
@@ -222,7 +178,8 @@ public:
 
 		return dp;
 	}
-	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences) {
+	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
+	{
 		std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> return_map;
 
 		for (size_t sample_id = 0; sample_id < simplified_sequences.size(); ++sample_id) {
