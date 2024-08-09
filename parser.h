@@ -140,6 +140,11 @@ public:
 		}
 		return explicit_sequences;
 	}
+#include <vector>
+#include <utility>
+#include <unordered_map>
+#include <algorithm>
+
 	std::vector<std::vector<std::vector<bool>>> FindPattern(const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences) {
 		size_t num_samples = simplified_sequences.size();
 		std::vector<std::vector<std::vector<bool>>> dp;
@@ -199,12 +204,16 @@ public:
 
 				if (common) {
 					for (size_t i = 0; i < num_samples; ++i) {
-						dp[i][start][length] = true;
+						if (start < dp[i].size() && length <= dp[i][start].size()) {
+							dp[i][start][length] = true;
+						}
 					}
 					// Set shorter lengths to false for all samples
 					for (size_t i = 0; i < num_samples; ++i) {
 						for (size_t len = 1; len < length; ++len) {
-							dp[i][start][len] = false;
+							if (start < dp[i].size() && len <= dp[i][start].size()) {
+								dp[i][start][len] = false;
+							}
 						}
 					}
 				}
