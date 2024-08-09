@@ -53,13 +53,13 @@ int main()
     };
 
     /* 追加测试实验 */
-    int n = 2;
-    while (n--)
-    {
-        parser_factory.SelfIteration(db, normal_mode, exam_mode, 1);
-        parser_factory.Syntacticalization(exam_mode);
-        exam_mode.expand_nodes.clear(); // 重新构造新的执行扩张交互元
-    }
+    //int n = 2;
+    //while (n--)
+    //{
+    //    parser_factory.SelfIteration(db, normal_mode, exam_mode, 1);
+    //    parser_factory.Syntacticalization(exam_mode);
+    //    exam_mode.expand_nodes.clear(); // 重新构造新的执行扩张交互元
+    //}
 
     /* 形成序对比实验 */
     int m = 1;
@@ -70,10 +70,15 @@ int main()
         auto pattern_sequences = parser_factory.AnalysePattern(dp_3d, explicit_sequences);
         for (const auto& p : pattern_sequences)
         {
-            for (const auto& s : p.second)
+            for (const auto& pairs : p.second)
             {
-                std::cout << s.first << "," << s.second << " ";
+                for (const auto& p : pairs)
+                {
+                    std::cout << "<" << p.first << "," << p.second << "> ";
+                }
+                std::cout << "|";
             }
+            std::cout << '\n';
         }
     }
 
