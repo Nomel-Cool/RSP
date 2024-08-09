@@ -51,12 +51,22 @@ int main()
         0,
         std::vector<std::vector<size_t>>()
     };
+
+    /* 追加测试实验 */
     int n = 2;
     while (n--)
     {
-        parser_factory.SelfIteration(normal_mode, exam_mode, 3);
+        parser_factory.SelfIteration(db, normal_mode, exam_mode, 1);
         parser_factory.Syntacticalization(exam_mode);
         exam_mode.expand_nodes.clear(); // 重新构造新的执行扩张交互元
+    }
+
+    /* 形成序对比实验 */
+    int m = 2;
+    while (m--)
+    {
+        auto explicit_sequences = parser_factory.CollectRawSequences(exam_mode);
+        auto dp_3d = parser_factory.FindPattern(explicit_sequences); // 收集模式串，返回三维dp数组
     }
     return 0;
 }
