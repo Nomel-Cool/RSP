@@ -45,7 +45,7 @@ int main()
         exam_output_file,
         exam_regression_file,
         true,
-        1, // 交互深度
+        20, // 交互深度
         1, // 交互规模
         0,
         0,
@@ -65,7 +65,7 @@ int main()
     int m = 1;
     while (m--)
     {
-        auto explicit_sequences = parser_factory.CollectRawSequences(exam_mode);
+        auto explicit_sequences = parser_factory.CollectRawSequences(exam_mode, 3);
         auto dp_3d = parser_factory.FindPattern(explicit_sequences); // 收集模式串，返回三维dp数组
         auto pattern_sequences = parser_factory.AnalysePattern(dp_3d, explicit_sequences);
         for (const auto& p : pattern_sequences)
