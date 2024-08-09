@@ -62,11 +62,20 @@ int main()
     }
 
     /* 形成序对比实验 */
-    int m = 2;
+    int m = 1;
     while (m--)
     {
         auto explicit_sequences = parser_factory.CollectRawSequences(exam_mode);
         auto dp_3d = parser_factory.FindPattern(explicit_sequences); // 收集模式串，返回三维dp数组
+        auto pattern_sequences = parser_factory.AnalysePattern(dp_3d, explicit_sequences);
+        for (const auto& p : pattern_sequences)
+        {
+            for (const auto& s : p.second)
+            {
+                std::cout << s.first << "," << s.second << " ";
+            }
+        }
     }
+
     return 0;
 }
