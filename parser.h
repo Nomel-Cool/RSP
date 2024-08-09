@@ -7,6 +7,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <unordered_map>
 
 #include <iostream>
 #include <utility>
@@ -137,40 +138,58 @@ public:
 		}
 		return explicit_sequences;
 	}
-	std::vector<std::vector<std::vector<bool>>> FindPattern(const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
-	{
+	std::vector<std::vector<std::vector<bool>>> FindPattern(const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences) {
 		size_t num_samples = simplified_sequences.size();
 		size_t d = simplified_sequences[0].size();
 		std::vector<std::vector<std::vector<bool>>> dp(num_samples, std::vector<std::vector<bool>>(d, std::vector<bool>(d + 1, false)));
 
-		for (size_t length = 1; length <= d; ++length)
-		{
-			for (size_t start = 0; start <= d - length; ++start)
-			{
+		// Create a hash map to store the substrings of the first sequence
+		std::unordered_map<std::string, std::vector<size_t>> substr_map;
+		for (size_t start = 0; start < d; ++start) {
+			for (size_t length = 1; length <= d - start; ++length) {
+				std::string key;
+				for (size_t k = 0; k < length; ++k) {
+					key += std::to_string(simplified_sequences[0][start + k].first) + "," + std::to_string(simplified_sequences[0][start + k].second) + ";";
+				}
+				substr_map[key].push_back(start);
+			}
+		}
+
+		// Check for common substrings in all sequences
+		for (size_t length = 1; length <= d; ++length) {
+			for (size_t start = 0; start <= d - length; ++start) {
+				std::string key;
+				for (size_t k = 0; k < length; ++k) {
+					key += std::to_string(simplified_sequences[0][start + k].first) + "," + std::to_string(simplified_sequences[0][start + k].second) + ";";
+				}
+
 				bool common = true;
-				for (size_t i = 1; i < num_samples; ++i)
-				{
+				for (size_t i = 1; i < num_samples; ++i) {
 					bool match = false;
-					for (size_t j = 0; j <= d - length; ++j)
-					{
-						if (std::equal(simplified_sequences[0].begin() + start, simplified_sequences[0].begin() + start + length,
-							simplified_sequences[i].begin() + j))
-						{
+					for (size_t j = 0; j <= d - length; ++j) {
+						std::string current_key;
+						for (size_t k = 0; k < length; ++k) {
+							current_key += std::to_string(simplified_sequences[i][j + k].first) + "," + std::to_string(simplified_sequences[i][j + k].second) + ";";
+						}
+						if (current_key == key) {
 							match = true;
 							break;
 						}
 					}
-					if (!match)
-					{
+					if (!match) {
 						common = false;
 						break;
 					}
 				}
-				if (common)
-					for (size_t i = 0; i < num_samples; ++i)
+
+				if (common) {
+					for (size_t i = 0; i < num_samples; ++i) {
 						dp[i][start][length] = true;
+					}
+				}
 			}
 		}
+
 		return dp;
 	}
 protected:
