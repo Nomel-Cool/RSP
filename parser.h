@@ -116,10 +116,10 @@ public:
 			}
 		}
 	}
-	std::vector<std::vector<std::pair<size_t, size_t>>> CollectRawSequences(interaction_param exam_mode)
+	std::vector<std::vector<std::pair<size_t, size_t>>> CollectRawSequences(interaction_param exam_mode, size_t exam_times)
 	{
 		std::vector<std::vector<std::pair<size_t, size_t>>> explicit_sequences;
-		while (exam_mode.interaction_depth--)
+		while (exam_times--)
 		{
 			auto resultant_sequences = expandExamModel(
 				exam_mode.manipulate_node,
@@ -130,7 +130,9 @@ public:
 				exam_mode.output_file,
 				exam_mode.regression_file,
 				exam_mode.interaction_scale, // 扩张程度为1
-				exam_mode.expand_nodes
+				exam_mode.expand_nodes,
+				exam_mode.interaction_depth, // 交互深度
+				0 // 收敛条件设置为0，保证交互深度即形成序长度
 			);
 			// 顺手存储相邻去重后的序列
 			auto explicit_sequence = adjoinUnify(resultant_sequences);
@@ -140,13 +142,18 @@ public:
 	}
 	std::vector<std::vector<std::vector<bool>>> FindPattern(const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences) {
 		size_t num_samples = simplified_sequences.size();
-		size_t d = simplified_sequences[0].size();
-		std::vector<std::vector<std::vector<bool>>> dp(num_samples, std::vector<std::vector<bool>>(d, std::vector<bool>(d + 1, false)));
+		std::vector<std::vector<std::vector<bool>>> dp;
+
+		// Initialize dp array based on the actual length of each sequence
+		for (const auto& seq : simplified_sequences) {
+			size_t length = seq.size();
+			dp.push_back(std::vector<std::vector<bool>>(length, std::vector<bool>(length + 1, false)));
+		}
 
 		// Create a hash map to store the substrings of the first sequence
 		std::unordered_map<std::string, size_t> substr_map;
-		for (size_t start = 0; start < d; ++start) {
-			for (size_t length = 1; length <= d - start; ++length) {
+		for (size_t start = 0; start < simplified_sequences[0].size(); ++start) {
+			for (size_t length = 1; length <= simplified_sequences[0].size() - start; ++length) {
 				std::string key;
 				for (size_t k = 0; k < length; ++k) {
 					auto p = simplified_sequences[0][start + k];
@@ -158,8 +165,8 @@ public:
 		}
 
 		// Check for common substrings in all sequences
-		for (size_t length = 1; length <= d; ++length) {
-			for (size_t start = 0; start <= d - length; ++start) {
+		for (size_t length = 1; length <= simplified_sequences[0].size(); ++length) {
+			for (size_t start = 0; start <= simplified_sequences[0].size() - length; ++start) {
 				std::string key;
 				for (size_t k = 0; k < length; ++k) {
 					auto p = simplified_sequences[0][start + k];
@@ -170,12 +177,14 @@ public:
 				bool common = true;
 				for (size_t i = 1; i < num_samples; ++i) {
 					bool match = false;
-					for (size_t j = 0; j <= d - length; ++j) {
+					for (size_t j = 0; j <= simplified_sequences[i].size() - length; ++j) {
 						std::string current_key;
 						for (size_t k = 0; k < length; ++k) {
-							auto p = simplified_sequences[i][j + k];
-							if (p.first > p.second) std::swap(p.first, p.second);
-							current_key += std::to_string(p.first) + "," + std::to_string(p.second) + ";";
+							if (j + k < simplified_sequences[i].size()) {
+								auto p = simplified_sequences[i][j + k];
+								if (p.first > p.second) std::swap(p.first, p.second);
+								current_key += std::to_string(p.first) + "," + std::to_string(p.second) + ";";
+							}
 						}
 						if (current_key == key) {
 							match = true;
@@ -214,7 +223,7 @@ public:
 			while (pos < d) {
 				bool found = false;
 				for (size_t len = d - pos; len > 0; --len) {
-					if (dp[sample_id][pos][len]) {
+					if (pos + len <= dp[sample_id].size() && dp[sample_id][pos][len]) {
 						std::vector<std::pair<size_t, size_t>> substring;
 						for (size_t k = 0; k < len; ++k) {
 							substring.push_back(simplified_sequences[sample_id][pos + k]);
@@ -394,6 +403,7 @@ protected:
 		const std::string& exam_regression_file,
 		const size_t& extra_size,
 		std::vector<std::vector<size_t>>& expand_nodes,
+		const size_t& interaction_depth = 1,
 		const size_t& convergence_limit = 5
 	)
 	{
@@ -415,7 +425,8 @@ protected:
 				exam_ratio_file,
 				exam_output_file,
 				exam_regression_file,
-				true
+				true,
+				interaction_depth
 			);
 
 			if (std::get<0>(first_interactor) == std::get<1>(first_interactor))
@@ -425,7 +436,7 @@ protected:
 				(std::get<0>(first_interactor) == std::get<2>(feed_back) && std::get<1>(first_interactor) == std::get<1>(feed_back)))
 				counter++;
 
-			if (counter == convergence_limit)
+			if (counter >= convergence_limit)
 			{
 				counter = 0;
 				break; // 当出现第2次实验头时，认为达到了平衡标准
