@@ -116,8 +116,19 @@ public:
 			}
 		}
 	}
-	std::vector<std::vector<std::pair<size_t, size_t>>> CollectRawSequences(interaction_param exam_mode, size_t exam_times)
+	std::vector<std::vector<std::pair<size_t, size_t>>> CollectRawSequences(interaction_param noraml_mode, interaction_param exam_mode, size_t exam_times)
 	{
+		Interaction(
+			noraml_mode.manipulate_node,
+			noraml_mode.accuracy_file,
+			noraml_mode.answer_file,
+			noraml_mode.order_file,
+			noraml_mode.ratio_file,
+			noraml_mode.output_file,
+			noraml_mode.regression_file,
+			noraml_mode.isStored, // 不记录抽象形成序
+			noraml_mode.interaction_depth // 交互深度为20
+		);
 		std::vector<std::vector<std::pair<size_t, size_t>>> explicit_sequences;
 		while (exam_times--)
 		{
