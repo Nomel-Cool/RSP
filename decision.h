@@ -321,9 +321,9 @@ protected:
 		size_t _j = maxUnBalancedPair.first.second;
 
 		// 重复选择多次，添加惩罚，转嫁到随机上
-		bool isPenal = penalty(_i, _j);
-		if (isPenal)
-			executePenalty(_i, _j);
+		//bool isPenal = penalty(_i, _j);
+		//if (isPenal)
+		//	executePenalty(_i, _j);
 
 		// 挑选最大超验收敛率的组
 		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
@@ -338,9 +338,9 @@ protected:
 		size_t _j = exam_j;
 
 		// 重复选择多次，添加惩罚，转嫁到随机上
-		bool isPenal = penalty(_i, _j);
-		if (isPenal)
-			executePenalty(_i, _j);
+		//bool isPenal = penalty(_i, _j);
+		//if (isPenal)
+		//	executePenalty(_i, _j);
 
 		// 挑选最大超验收敛率的组
 		auto index_query = closestToExpectation(accuracy_datas.at({ _i, _j }), accuracy_datas.at({ _j, _i }));
