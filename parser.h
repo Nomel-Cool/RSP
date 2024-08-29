@@ -194,7 +194,8 @@ public:
 		}
 
 		return dp;
-	}	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
+	}
+	std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> AnalysePattern(const std::vector<std::vector<std::vector<bool>>>& dp, const std::vector<std::vector<std::pair<size_t, size_t>>>& simplified_sequences)
 	{
 		std::map<size_t, std::vector<std::vector<std::pair<size_t, size_t>>>> return_map;
 
