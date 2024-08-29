@@ -37,22 +37,6 @@ public:
 	}
 
 	/// <summary>
-	/// 执行总体回归检测
-	/// </summary>
-	/// <param name="i"></param>
-	/// <param name="j"></param>
-	virtual void _interaction(size_t i, size_t j)
-	{
-		size_t n = m_interactive_elements.size();
-		if (i + 1 > n || i + 1 <= 0 || j + 1 <= 0 || j + 1 > n)
-			throw;
-		double determined_position = _getPosition(i + 1, j + 1) / SHRINK_RATIO;  // 缩小10^10倍
-		double grass = std::pow((n - 1) * n / 2, std::get<0>(m_up_pos)) / SHRINK_RATIO;  // 缩小10^10倍
-		double positon_ratio = static_cast<double>(determined_position) / grass;
-		m_current_ratio = positon_ratio;
-	}
-
-	/// <summary>
 	/// 执行局部回归检测
 	/// </summary>
 	/// <param name="i"></param>
@@ -113,17 +97,6 @@ public:
 		return m_interactive_elements;
 	}
 protected:
-	virtual size_t _getPosition(size_t i, size_t j)
-	{
-		if (j < i)
-			std::swap(i, j);
-		size_t n = m_interactive_elements.size();
-		size_t determined_anchor = std::get<1>(m_up_pos);
-		size_t relative_position = (((2 * n - i) * (i - 1)) >> 1) + j - i;
-		size_t determined_position = (determined_anchor - 1) * ((n * (n - 1)) >> 1) + relative_position;
-		m_up_pos = std::make_tuple(std::get<0>(m_up_pos) + 1, determined_position);
-		return determined_position;
-	}
 
 	virtual size_t getPosition(size_t i, size_t j)
 	{
